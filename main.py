@@ -22,6 +22,8 @@ saturation = 1.0
 inky_display = auto(ask_user=True, verbose=True)
 # inky_display.set_border(inky_display.WHITE)s
 image = Image.open("calendar.png")
+#resize image to fit screen
+image = image.resize((inky_display.WIDTH, inky_display.HEIGHT))
 inky_display.set_image(image, saturation=saturation)
 inky_display.set_border(inky_display.WHITE)
 inky_display.show()
