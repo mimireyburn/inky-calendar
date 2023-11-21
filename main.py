@@ -1,10 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-import webdriver_manager.utils 
+from webdriver_manager.utils import ChromeType
 service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
 from PIL import Image
 import time
+from inky import InkyPHAT
 # Import your e-ink display library here
 
 # Replace this with the path to your chromedriver and the path to your local HTML file
@@ -42,7 +43,7 @@ saturation = 1.0
 # display calendar_image.png on the screen
 inky_display = auto(ask_user=True, verbose=True)
 # inky_display.set_border(inky_display.WHITE)s
-image = Image.open("screenshot.png")
+image = Image.open("cal.png")
 inky_display.set_image(image, saturation=saturation)
 inky_display.set_border(inky_display.WHITE)
 inky_display.show()
