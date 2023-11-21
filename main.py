@@ -1,4 +1,4 @@
-from selenium import webdriver
+import selenium
 from PIL import Image
 import time
 from inky import InkyPHAT
