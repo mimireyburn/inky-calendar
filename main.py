@@ -1,16 +1,10 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.utils import ChromeType
-service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
 from PIL import Image
 import time
 from inky import InkyPHAT
 # Import your e-ink display library here
-
-# Replace this with the path to your chromedriver and the path to your local HTML file
-chromedriver_path = '/usr/bin/chromedriver'
-html_file_path = '/home/pi/inky-calendar/index.html'
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+# Other imports remain the same
 
 # Selenium Configuration
 options = webdriver.ChromeOptions()
@@ -18,8 +12,13 @@ options.add_argument('--headless')
 options.add_argument('--disable-gpu')
 options.add_argument('--window-size=800x600')  # Adjust to your e-ink display size
 
+# Here, you can directly use ChromeDriverManager without specifying ChromeType
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
+
+# Replace this with the path to your chromedriver and the path to your local HTML file
+chromedriver_path = '/usr/bin/chromedriver'
+html_file_path = '/home/pi/inky-calendar/index.html'
 
 driver.get(html_file_path)
 time.sleep(2)  # Wait for the page to load
