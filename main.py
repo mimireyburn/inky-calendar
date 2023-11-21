@@ -1,18 +1,13 @@
-import webbrowser
-import pyautogui
-import time
+import subprocess
 
 # Path to your local HTML file
 html_file_path = '/home/calendar/inky-calendar/index.html'
 
-# Open the HTML file in the default web browser
-webbrowser.open('file://' + html_file_path)
+# Path to save the screenshot
+screenshot_path = '/home/calendar/inky-calendar/calendar.png'
 
-# Wait for the browser to load the page
-time.sleep(5)  # Adjust the delay as needed
+# Command to render HTML to an image
+command = f'wkhtmltoimage --quality 100 {html_file_path} {screenshot_path}'
 
-# Take a screenshot
-screenshot = pyautogui.screenshot()
-
-# Save the screenshot
-screenshot.save('/path/to/save/screenshot.png')
+# Execute the command
+subprocess.run(command, shell=True)
