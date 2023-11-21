@@ -1,47 +1,18 @@
-import selenium
-from PIL import Image
+import webbrowser
+import pyautogui
 import time
-from inky import InkyPHAT
-# Other imports...
 
-options = webdriver.ChromeOptions()
-options.binary_location = '/usr/bin/chromium-browser'  # Path to Chromium
-options.add_argument('--headless')
-options.add_argument('--disable-gpu')
-options.add_argument('--window-size=800x480')  # Adjust to your e-ink display size
+# Path to your local HTML file
+html_file_path = '/home/calendar/inky-calendar/index.html'
 
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=options)
+# Open the HTML file in the default web browser
+webbrowser.open('file://' + html_file_path)
 
-# Replace this with the path to your chromedriver and the path to your local HTML file
-chromedriver_path = '/usr/bin/chromedriver'
-html_file_path = '/home/pi/inky-calendar/index.html'
+# Wait for the browser to load the page
+time.sleep(5)  # Adjust the delay as needed
 
-driver.get(html_file_path)
-time.sleep(2)  # Wait for the page to load
+# Take a screenshot
+screenshot = pyautogui.screenshot()
 
-# Screenshot and Save as PNG
-screenshot_path = '/home/pi/inky-calendar/cal.png'
-driver.save_screenshot(screenshot_path)
-driver.quit()
-
-# Open Image and Convert for E-ink Display
-image = Image.open(screenshot_path)
-# Convert to grayscale and resize if necessary
-image = image.convert('L')
-# Resize or other image processing here
-
-# Display on E-ink
-# Initialize your e-ink display and display the image
-print("Displaying calendar")
-saturation = 1.0
-
-# display calendar_image.png on the screen
-inky_display = auto(ask_user=True, verbose=True)
-# inky_display.set_border(inky_display.WHITE)s
-image = Image.open("cal.png")
-inky_display.set_image(image, saturation=saturation)
-inky_display.set_border(inky_display.WHITE)
-inky_display.show()
-
-# Make sure to handle exceptions and errors as needed
+# Save the screenshot
+screenshot.save('/path/to/save/screenshot.png')
