@@ -4,14 +4,14 @@ from webdriver_manager.chrome import ChromeDriverManager
 from PIL import Image
 import time
 from inky import InkyPHAT
+# Other imports...
 
-# Selenium Configuration
 options = webdriver.ChromeOptions()
+options.binary_location = '/usr/bin/chromium-browser'  # Path to Chromium
 options.add_argument('--headless')
 options.add_argument('--disable-gpu')
-options.add_argument('--window-size=800x600')  # Adjust to your e-ink display size
+options.add_argument('--window-size=800x480')  # Adjust to your e-ink display size
 
-# Here, you can directly use ChromeDriverManager without specifying ChromeType
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
 
