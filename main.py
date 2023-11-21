@@ -1,10 +1,9 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from PIL import Image
 import time
 from inky import InkyPHAT
-# Import your e-ink display library here
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-# Other imports remain the same
 
 # Selenium Configuration
 options = webdriver.ChromeOptions()
