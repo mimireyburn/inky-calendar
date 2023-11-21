@@ -1,5 +1,6 @@
 import subprocess
 from inky.auto import auto
+from PIL import Image
 
 # Path to your local HTML file
 html_file_path = '/home/calendar/inky-calendar/index.html'
