@@ -16,16 +16,24 @@ subprocess.run(command, shell=True)
 
 
 print("Displaying calendar")
-saturation = 1.0
 
-# display calendar_image.png on the screen
+# display calendar.png on the screen
 inky_display = auto(ask_user=True, verbose=True)
-# inky_display.set_border(inky_display.WHITE)s
+
+# Adjust saturation
+saturation = 1.5  # Adjust this value as needed
+
+# Load image
 image = Image.open("calendar.png")
-# print image size
-print(image.size)
-#resize image to fit screen
+
+# Enhance color
+enhancer = ImageEnhance.Color(image)
+image = enhancer.enhance(saturation)
+
+# Resize image to fit screen
 image = image.resize((inky_display.WIDTH, inky_display.HEIGHT))
-inky_display.set_image(image, saturation=saturation)
+
+# Display image
+inky_display.set_image(image)
 inky_display.set_border(inky_display.WHITE)
 inky_display.show()
