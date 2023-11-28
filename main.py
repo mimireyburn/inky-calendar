@@ -11,7 +11,7 @@ class InkyCalendar:
         self.inky_display = auto(ask_user=True, verbose=True)
 
     def render_html_to_image(self):
-        command = f'wkhtmltoimage --quality 100 --javascript-delay 25000 --width 800 --height 480 {self.html_file_path} {self.screenshot_path}'
+        command = f'wkhtmltoimage --quality 100 --javascript-delay 25000 --width 800 --height 530 {self.html_file_path} {self.screenshot_path}'
         subprocess.run(command, shell=True)
 
     def display_calendar(self):
@@ -23,7 +23,7 @@ class InkyCalendar:
         image = enhancer.enhance(self.saturation)
 
         # Crop image to fit screen
-        buffer = 10
+        buffer = 11
         image = image.crop((buffer, buffer, self.inky_display.WIDTH + buffer, self.inky_display.HEIGHT + buffer))
 
         # Display image
