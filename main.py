@@ -1,39 +1,53 @@
 import subprocess
 from inky.auto import auto
-from PIL import Image
+from PIL import Image, ImageEnhance
+import RPi.GPIO as GPIO 
 
-# Path to your local HTML file
-html_file_path = '/home/calendar/inky-calendar/index.html'
+class InkyCalendar:
+    def __init__(self, html_file_path, screenshot_path, saturation=1.5):
+        self.html_file_path = html_file_path
+        self.screenshot_path = screenshot_path
+        self.saturation = saturation
+        self.inky_display = auto(ask_user=True, verbose=True)
 
-# Path to save the screenshot
-screenshot_path = '/home/calendar/inky-calendar/calendar.png'
+    def render_html_to_image(self):
+        command = f'wkhtmltoimage --quality 100 --javascript-delay 100000 --width 800 --height 480 {self.html_file_path} {self.screenshot_path}'
+        subprocess.run(command, shell=True)
 
-# Command to render HTML to an image
-command = f'wkhtmltoimage --quality 100 --javascript-delay 100000 --width 800 --height 480 {html_file_path} {screenshot_path}'
+    def display_calendar(self):
+        # Load image
+        image = Image.open(self.screenshot_path)
 
-# Execute the command
-subprocess.run(command, shell=True)
+        # Enhance color
+        enhancer = ImageEnhance.Color(image)
+        image = enhancer.enhance(self.saturation)
+
+        # Resize image to fit screen
+        image = image.resize((self.inky_display.WIDTH, self.inky_display.HEIGHT))
+
+        # Display image
+        self.inky_display.set_image(image)
+        self.inky_display.show()
 
 
-print("Displaying calendar")
+if __name__ == "__main__":
+    # set up GPIO buttons
+    BUTTONS = [5, 6, 16, 24]
+    LABELS = ["A", "B", "C", "D"]
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-# display calendar.png on the screen
-inky_display = auto(ask_user=True, verbose=True)
-
-# Adjust saturation
-saturation = 1.5  # Adjust this value as needed
-
-# Load image
-image = Image.open("calendar.png")
-
-# Enhance color
-enhancer = ImageEnhance.Color(image)
-image = enhancer.enhance(saturation)
-
-# Resize image to fit screen
-image = image.resize((inky_display.WIDTH, inky_display.HEIGHT))
-
-# Display image
-inky_display.set_image(image)
-inky_display.set_border(inky_display.WHITE)
-inky_display.show()
+    # Poll GPIO buttons
+    while True:
+        # if BUTTON A is pressed, display calendar
+        if GPIO.input(BUTTONS[0]) == GPIO.LOW:
+            calendar = InkyCalendar('/home/calendar/inky-calendar/month.html', '/home/calendar/inky-calendar/calendar.png')
+            calendar.render_html_to_image()
+            print("Displaying month")
+            calendar.display_calendar()
+        
+        if GPIO.input(BUTTONS[1]) == GPIO.LOW:
+            calendar = InkyCalendar('/home/calendar/inky-calendar/week.html', '/home/calendar/inky-calendar/calendar.png')
+            calendar.render_html_to_image()
+            print("Displaying week")
+            calendar.display_calendar()
