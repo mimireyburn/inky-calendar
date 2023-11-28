@@ -4,7 +4,7 @@ from PIL import Image, ImageEnhance
 import RPi.GPIO as GPIO 
 
 class InkyCalendar:
-    def __init__(self, html_file_path, screenshot_path, saturation=2.5):
+    def __init__(self, html_file_path, screenshot_path, saturation=4):
         self.html_file_path = html_file_path
         self.screenshot_path = screenshot_path
         self.saturation = saturation
@@ -22,8 +22,8 @@ class InkyCalendar:
         enhancer = ImageEnhance.Color(image)
         image = enhancer.enhance(self.saturation)
 
-        # Resize image to fit screen
-        image = image.resize((self.inky_display.WIDTH, self.inky_display.HEIGHT))
+        # Crop image to fit screen
+        image = image.crop((10, 10, self.inky_display.WIDTH, self.inky_display.HEIGHT))
 
         # Display image
         self.inky_display.set_image(image)
