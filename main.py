@@ -1,5 +1,6 @@
 from inky.auto import auto
-from selenium import webdriver, Service
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from PIL import Image, ImageEnhance
 import RPi.GPIO as GPIO
