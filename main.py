@@ -1,10 +1,7 @@
+import subprocess
 from inky.auto import auto
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from PIL import Image, ImageEnhance
-import RPi.GPIO as GPIO
-import time
+import RPi.GPIO as GPIO 
 
 class InkyCalendar:
     def __init__(self, html_file_path, screenshot_path, saturation=6.5):
@@ -14,18 +11,8 @@ class InkyCalendar:
         self.inky_display = auto(ask_user=True, verbose=True)
 
     def render_html_to_image(self):
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--window-size=800,510")
-        chrome_options.add_argument("--disable-gpu")
-
-        browser_driver = Service('/usr/lib/chromium-browser/chromedriver')
-        
-        with webdriver.Chrome(service=browser_driver, options=chrome_options) as browser:
-            browser.get("file://" + self.html_file_path)
-            # Wait for JavaScript rendering
-            time.sleep(5)
-            browser.save_screenshot(self.screenshot_path)
+        command = f'wkhtmltoimage --quality 100 --javascript-delay 25000 --width 800 --height 510 {self.html_file_path} {self.screenshot_path}'
+        subprocess.run(command, shell=True)
 
     def display_calendar(self):
         # Load image
