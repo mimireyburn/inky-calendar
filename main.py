@@ -18,9 +18,8 @@ class InkyCalendar:
         chrome_options.add_argument("--window-size=800,510")
         chrome_options.add_argument("--disable-gpu")
         
-        # Assuming chromedriver is in PATH
         with webdriver.Chrome(options=chrome_options) as browser:
-            browser.get(self.html_file_path)
+            browser.get('/usr/lib/chromium-browser/chromedriver')
             # Wait for JavaScript rendering
             time.sleep(5)
             browser.save_screenshot(self.screenshot_path)
