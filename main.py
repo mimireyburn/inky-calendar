@@ -60,7 +60,7 @@ if __name__ == "__main__":
     while True:
         # if BUTTON A is pressed, display calendar
         if GPIO.input(BUTTONS[0]) == GPIO.LOW:
-            calendar = InkyCalendar('/home/calendar/inky-calendar/month.html', '/home/calendar/inky-calendar/calendar.png')
+            calendar = InkyCalendar('/home/calendar/inky-calendar/calendar.html', '/home/calendar/inky-calendar/calendar.png')
             calendar.render_html_to_image()
             print("Displaying month")
             calendar.display_calendar()
