@@ -13,7 +13,7 @@ def getMonth():
     cal_img = CalendarImage()
 
     start_time = cal_img.prev_monday.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
-    end_time = (cal_img.prev_monday + datetime.timedelta(days=(cal_img.WEEKS * 7) - 1)).replace(hour=23, minute=59, second=59, microsecond=999999).isoformat() + "Z"
+    end_time = (cal_img.prev_monday + datetime.timedelta(days=(cal_img.weeks * 7) - 1)).replace(hour=23, minute=59, second=59, microsecond=999999).isoformat() + "Z"
     
     events = cal_img.get_events(start_time, end_time)
     cal_img.populate_events_dict(events)
