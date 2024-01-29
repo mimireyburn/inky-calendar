@@ -22,21 +22,6 @@ def getMonth():
     cal_img.save_image()
 
 
-def getWeek(): 
-    print("Getting week...")
-    cal_img = CalendarImage()
-
-    start_time = (datetime.datetime.utcnow() - datetime.timedelta(days=datetime.datetime.utcnow().weekday())).replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
-    end_time = (datetime.datetime.utcnow() + datetime.timedelta(days=6-datetime.datetime.utcnow().weekday())).replace(hour=23, minute=59, second=59, microsecond=999999).isoformat() + "Z" 
-    
-    events = cal_img.get_events(start_time, end_time)
-    cal_img.populate_events_dict(events)
-
-    cal_img.draw_week()
-    cal_img.draw_week_events()
-    cal_img.save_image()
-
-
 def display():
     print("Displaying calendar")
     saturation = 1.0
@@ -64,12 +49,8 @@ if __name__ == "__main__":
             print("Button A pressed")
             getMonth()
             display()
-        
-        if GPIO.input(BUTTONS[1]) == GPIO.LOW:
-            print("Button B pressed")
-            getWeek()
-            display()
 
     # Test on mac 
     # print("Running on mac")
     # getMonth()
+    # getWeek()
