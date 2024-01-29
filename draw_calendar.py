@@ -22,7 +22,7 @@ class CalendarImage:
         self.box_padding = 30
         self.calendar_height = self.height - self.top_padding - 1
         self.box_height = math.floor(self.calendar_height / self.weeks)
-        self.box_width = math.floor(self.width / 7) - 0.25
+        self.box_width = math.floor(self.width / 7)
         self.event_height = 16
 
         self.colors = {
@@ -47,7 +47,7 @@ class CalendarImage:
         self.events_dict = {}
 
         self.font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 18)
-        self.small_font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 11)
+        self.small_font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 12)
         self.img = Image.new('RGB', (self.width, self.height), color='white')
         self.d = ImageDraw.Draw(self.img)
 
@@ -151,12 +151,9 @@ class CalendarImage:
                     # text_colour = self.colors['external_event']
                 if " w " in self.events_dict[date][i][0]: 
                     text_colour = self.colors['external_event']
-                    datetime_obj = datetime.datetime.strptime(self.events_dict[date][i][2], "%Y-%m-%dT%H:%M:%S%z")
-                    self.d.text((math.floor(self.box_width*day_of_week) + 3, self.top_padding + self.box_padding + (week*self.box_height) + (i*self.event_height)), (datetime_obj.strftime("%H:%M") + " " + self.events_dict[date][i][0]), font=self.small_font, fill=text_colour)
                 else:
                     text_colour = self.colors['my_event']
-                    datetime_obj = datetime.datetime.strptime(self.events_dict[date][i][2], "%Y-%m-%dT%H:%M:%S%z")
-                    self.d.text((math.floor(self.box_width*day_of_week) + 3, self.top_padding + self.box_padding + (week*self.box_height) + (i*self.event_height)), (datetime_obj.strftime("%H:%M") + " " + self.events_dict[date][i][0]), font=self.small_font, fill=text_colour)
+                self.d.text((math.floor(self.box_width*day_of_week) + 5, self.top_padding + self.box_padding + (week*self.box_height) + (i*self.event_height)), self.events_dict[date][i][0], font=self.small_font, fill=text_colour)
 
     
     def save_image(self):
