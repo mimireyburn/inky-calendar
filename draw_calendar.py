@@ -17,7 +17,7 @@ class CalendarImage:
     def initialize_variables(self):
         self.width = 800
         self.height = 480
-        self.weeks = 5
+        self.weeks = 4
         self.top_padding = 35
         self.box_padding = 30
         self.calendar_height = self.height - self.top_padding - 1
@@ -41,7 +41,6 @@ class CalendarImage:
             'week_event': "blue",
             'today': "red"
         }
-        self.week_event_radius = 5
 
         self.prev_monday = (datetime.datetime.utcnow() - datetime.timedelta(days=datetime.datetime.utcnow().weekday())) - datetime.timedelta(days=7)
         self.days_of_week = ["M", "T", "W", "T", "F", "S", "S"]
@@ -52,6 +51,7 @@ class CalendarImage:
         self.img = Image.new('RGB', (self.width, self.height), color='white')
         self.d = ImageDraw.Draw(self.img)
 
+
     def load_credentials(self):
         with open("KEY.json") as f:
             data = json.load(f)
@@ -59,16 +59,19 @@ class CalendarImage:
         self.credentials = Credentials.from_service_account_file("KEY.json")
         self.service = build("calendar", "v3", credentials=self.credentials)
 
+
     def get_events(self, start_time, end_time):
         events_result = self.service.events().list(
             calendarId=self.cal_id, timeMin=start_time, timeMax=end_time, singleEvents=True, orderBy="startTime"
         ).execute()
         return events_result.get("items", [])
 
+
     def populate_events_dict(self, events):
         for event in events:
             start_date, end_date, time, end = self.extract_event_details(event)
             self.add_event_to_dict(start_date, [event["summary"], event["creator"]["email"], time, end])
+
 
     def extract_event_details(self, event):
         try:
@@ -82,6 +85,7 @@ class CalendarImage:
             time = "06:00"
             end_time = "06:30"
         return start_date, end_date, time, end_time
+
 
     def add_event_to_dict(self, date, event_details):
         if date in self.events_dict:
@@ -119,12 +123,14 @@ class CalendarImage:
                             (math.floor(self.box_width*(j+1) - 20) - radius, self.top_padding + (i*self.box_height) + 14 - radius), 
                             (math.floor(self.box_width*(j+1) - 20) + radius + 8, self.top_padding + (i*self.box_height) + 20 + radius)], fill=self.colors['day_circle'])
                         text_color = self.colors['day_text']
-                                    
+
+                    # If day is in next month            
                     if self.prev_monday.day + (i*7) + j > calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]:
-                        self.d.text((math.floor(self.box_width*(j+1) - 25), self.top_padding + (i*self.box_height) + 5), str(self.prev_monday.day + (i*7) + j + 1 - calendar.monthrange(year, month)[1]), font=self.font, fill=text_color)
+                        self.d.text((math.floor(self.box_width*(j+1) - 25), self.top_padding + (i*self.box_height) + 5), str(self.prev_monday.day + (i*7) + j - calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]), font=self.font, fill=text_color)
                     else:
                         self.d.text((math.floor(self.box_width*(j+1) - 25), self.top_padding + (i*self.box_height) + 5), str(self.prev_monday.day + (i*7) + j), font=self.font, fill=text_color)
-            
+
+
     def draw_month_events(self):
         # Draw events on calendar
         for date in self.events_dict:
@@ -153,7 +159,7 @@ class CalendarImage:
 if __name__ == "__main__":
     cal_img = CalendarImage()
     # month view
-    WEEKS = 5
+    WEEKS = 4
     today = datetime.datetime.today()
     prev_monday = today - datetime.timedelta(days=today.weekday())
     start_time = prev_monday.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"

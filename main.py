@@ -44,7 +44,7 @@ def display():
 
     # display calendar_image.png on the screen
     inky_display = auto(ask_user=True, verbose=True)
-    # inky_display.set_border(inky_display.WHITE)s
+    # inky_display.set_border(inky_display.WHITE)
     image = Image.open("calendar_image.png")
     inky_display.set_image(image, saturation=saturation)
     inky_display.set_border(inky_display.WHITE)
