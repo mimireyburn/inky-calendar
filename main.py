@@ -17,7 +17,6 @@ def getMonth():
     
     events = cal_img.get_events(start_time, end_time)
     cal_img.populate_events_dict(events)
-
     cal_img.draw_month()
     cal_img.draw_month_events()
     cal_img.save_image()
