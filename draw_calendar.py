@@ -47,7 +47,7 @@ class CalendarImage:
         self.events_dict = {}
 
         self.font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 18)
-        self.small_font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 12)
+        self.small_font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 13)
         self.img = Image.new('RGB', (self.width, self.height), color='white')
         self.d = ImageDraw.Draw(self.img)
 
@@ -145,8 +145,8 @@ class CalendarImage:
             # Draw each event
             for i in range(num_events):
                 # truncate event name if too long
-                if len(self.events_dict[date][i][0]) > 17:
-                    self.events_dict[date][i][0] = self.events_dict[date][i][0][:16] + "..."
+                if len(self.events_dict[date][i][0]) > 19:
+                    self.events_dict[date][i][0] = self.events_dict[date][i][0][:18] + "..."
                 # if self.events_dict[date][i][1] != self.cal_id:
                     # text_colour = self.colors['external_event']
                 if " w " in self.events_dict[date][i][0]: 
