@@ -51,25 +51,25 @@ def display():
 
 
 if __name__ == "__main__":
-    # # set up GPIO buttons
-    # BUTTONS = [5, 6, 16, 24]
-    # LABELS = ["A", "B", "C", "D"]
-    # GPIO.setmode(GPIO.BCM)
-    # GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    # set up GPIO buttons
+    BUTTONS = [5, 6, 16, 24]
+    LABELS = ["A", "B", "C", "D"]
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-    # # Poll GPIO buttons
-    # while True:
-    #     # if BUTTON A is pressed, display calendar
-    #     if GPIO.input(BUTTONS[0]) == GPIO.LOW:
-    #         print("Button A pressed")
-    #         getMonth()
-    #         display()
+    # Poll GPIO buttons
+    while True:
+        # if BUTTON A is pressed, display calendar
+        if GPIO.input(BUTTONS[0]) == GPIO.LOW:
+            print("Button A pressed")
+            getMonth()
+            display()
         
-    #     if GPIO.input(BUTTONS[1]) == GPIO.LOW:
-    #         print("Button B pressed")
-    #         getWeek()
-    #         display()
+        if GPIO.input(BUTTONS[1]) == GPIO.LOW:
+            print("Button B pressed")
+            getWeek()
+            display()
 
     # Test on mac 
-    print("Running on mac")
-    getMonth()
+    # print("Running on mac")
+    # getMonth()
