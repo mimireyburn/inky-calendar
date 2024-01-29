@@ -47,7 +47,7 @@ class CalendarImage:
         self.events_dict = {}
 
         self.font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 18)
-        self.small_font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 12)
+        self.small_font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 11)
         self.img = Image.new('RGB', (self.width, self.height), color='white')
         self.d = ImageDraw.Draw(self.img)
 
@@ -56,6 +56,7 @@ class CalendarImage:
         with open("KEY.json") as f:
             data = json.load(f)
         self.cal_id = data["calendar_id"]
+        self.demo_id = data["demo_id"]
         self.credentials = Credentials.from_service_account_file("KEY.json")
         self.service = build("calendar", "v3", credentials=self.credentials)
 
@@ -70,7 +71,8 @@ class CalendarImage:
     def populate_events_dict(self, events):
         for event in events:
             start_date, end_date, time, end = self.extract_event_details(event)
-            self.add_event_to_dict(start_date, [event["summary"], event["creator"]["email"], time, end])
+            if event["organizer"]["email"] == self.demo_id:
+                self.add_event_to_dict(start_date, [event["summary"], event["organizer"]["email"], time, end])
 
 
     def extract_event_details(self, event):
@@ -143,13 +145,18 @@ class CalendarImage:
             # Draw each event
             for i in range(num_events):
                 # truncate event name if too long
-                if len(self.events_dict[date][i][0]) > 18:
-                    self.events_dict[date][i][0] = self.events_dict[date][i][0][:17] + "..."
-                if self.events_dict[date][i][1] != self.cal_id:
+                if len(self.events_dict[date][i][0]) > 17:
+                    self.events_dict[date][i][0] = self.events_dict[date][i][0][:16] + "..."
+                # if self.events_dict[date][i][1] != self.cal_id:
+                    # text_colour = self.colors['external_event']
+                if " w " in self.events_dict[date][i][0]: 
                     text_colour = self.colors['external_event']
+                    datetime_obj = datetime.datetime.strptime(self.events_dict[date][i][2], "%Y-%m-%dT%H:%M:%S%z")
+                    self.d.text((math.floor(self.box_width*day_of_week) + 3, self.top_padding + self.box_padding + (week*self.box_height) + (i*self.event_height)), (datetime_obj.strftime("%H:%M") + " " + self.events_dict[date][i][0]), font=self.small_font, fill=text_colour)
                 else:
                     text_colour = self.colors['my_event']
-                self.d.text((math.floor(self.box_width*day_of_week) + 5, self.top_padding + self.box_padding + (week*self.box_height) + (i*self.event_height)), self.events_dict[date][i][0], font=self.small_font, fill=text_colour)
+                    datetime_obj = datetime.datetime.strptime(self.events_dict[date][i][2], "%Y-%m-%dT%H:%M:%S%z")
+                    self.d.text((math.floor(self.box_width*day_of_week) + 3, self.top_padding + self.box_padding + (week*self.box_height) + (i*self.event_height)), (datetime_obj.strftime("%H:%M") + " " + self.events_dict[date][i][0]), font=self.small_font, fill=text_colour)
 
     
     def save_image(self):
