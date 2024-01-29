@@ -1,11 +1,11 @@
 # Display image on 7 colour inky dev screen
 import sys
 from PIL import Image
-# from inky.auto import auto
+from inky.auto import auto
 from draw_calendar import CalendarImage
 import time
 import signal 
-# import RPi.GPIO as GPIO 
+import RPi.GPIO as GPIO 
 import datetime
 
 def getMonth(): 
