@@ -41,7 +41,10 @@ if __name__ == "__main__":
     LABELS = ["A", "B", "C", "D"]
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
+    
+    getMonth()
+    display()
+    
     # Poll GPIO buttons
     while True:
         # if BUTTON A is pressed, display calendar
