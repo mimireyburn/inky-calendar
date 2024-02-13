@@ -26,20 +26,15 @@ class CalendarImage:
         self.event_height = 16
 
         self.colors = {
-            'outline': "white",
-            'days': "white",
-            'number': "white",
-            'day_text': "blue",
-            'day_circle': "yellow",
-            'background': "blue",
-            'my_event': "white",
+            # Colour options are: "black", "white", "green", "blue", "red", "yellow", "orange"
+            'outline': "black",
+            'days': "black", # days of the week text
+            'number': "black",
+            'today_text': "white",
+            'today_circle': "red",
+            'background': "white",
+            'internal_event': "blue",
             'external_event': "orange",
-            'weekday': "black",
-            'event_text': "white",
-            'week_external_event': "orange",
-            'week_outline': "black",
-            'week_event': "blue",
-            'today': "red"
         }
 
         self.prev_monday = (datetime.datetime.utcnow() - datetime.timedelta(days=datetime.datetime.utcnow().weekday())) - datetime.timedelta(days=7)
@@ -123,8 +118,8 @@ class CalendarImage:
                     if box_date == today:
                         self.d.ellipse([
                             (math.floor(self.box_width*(j+1) - 20) - radius, self.top_padding + (i*self.box_height) + 14 - radius), 
-                            (math.floor(self.box_width*(j+1) - 20) + radius + 8, self.top_padding + (i*self.box_height) + 20 + radius)], fill=self.colors['day_circle'])
-                        text_color = self.colors['day_text']
+                            (math.floor(self.box_width*(j+1) - 20) + radius + 8, self.top_padding + (i*self.box_height) + 20 + radius)], fill=self.colors['today_circle'])
+                        text_color = self.colors['today_text']
 
                     # If day is in next month            
                     if self.prev_monday.day + (i*7) + j > calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]:
@@ -152,7 +147,7 @@ class CalendarImage:
                 if " w " in self.events_dict[date][i][0]: 
                     text_colour = self.colors['external_event']
                 else:
-                    text_colour = self.colors['my_event']
+                    text_colour = self.colors['internal_event']
                 self.d.text((math.floor(self.box_width*day_of_week) + 5, self.top_padding + self.box_padding + (week*self.box_height) + (i*self.event_height)), self.events_dict[date][i][0], font=self.small_font, fill=text_colour)
 
     
