@@ -21,7 +21,7 @@ This project aims to combine the best of both worlds: a calendar that's always u
 5. Add new KEY in JSON format (It will download automatically)
 5. Save it as `KEY.json` in the root directory of this project
 
-### Add service account to your calendar
+### Add service account to your calendar
 1. Go to your Google Calendar
 2. Got to '...' on the chosen Calendar (usually in sidebar) then Settings and Sharing
 3. Scroll down to 'Share with specific people or groups' and click 'Add people and groups'
