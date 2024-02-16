@@ -51,7 +51,6 @@ class CalendarImage:
         with open("KEY.json") as f:
             data = json.load(f)
         self.cal_id = data["calendar_id"]
-        self.demo_id = data["demo_id"]
         self.credentials = Credentials.from_service_account_file("KEY.json")
         self.service = build("calendar", "v3", credentials=self.credentials)
 
@@ -66,7 +65,7 @@ class CalendarImage:
     def populate_events_dict(self, events):
         for event in events:
             start_date, end_date, time, end = self.extract_event_details(event)
-            if event["organizer"]["email"] == self.demo_id:
+            if event["organizer"]["email"] != self.cal_id:
                 self.add_event_to_dict(start_date, [event["summary"], event["organizer"]["email"], time, end])
 
 
@@ -140,10 +139,8 @@ class CalendarImage:
             # Draw each event
             for i in range(num_events):
                 # truncate event name if too long
-                if len(self.events_dict[date][i][0]) > 19:
-                    self.events_dict[date][i][0] = self.events_dict[date][i][0][:18] + "..."
-                # if self.events_dict[date][i][1] != self.cal_id:
-                    # text_colour = self.colors['external_event']
+                if len(self.events_dict[date][i][0]) > 18:
+                    self.events_dict[date][i][0] = self.events_dict[date][i][0][:17] + "..."
                 if " w " in self.events_dict[date][i][0]: 
                     text_colour = self.colors['external_event']
                 else:
@@ -153,28 +150,3 @@ class CalendarImage:
     
     def save_image(self):
         self.img.save('calendar_image.png')
-
-
-if __name__ == "__main__":
-    cal_img = CalendarImage()
-    # month view
-    WEEKS = 4
-    today = datetime.datetime.today()
-    prev_monday = today - datetime.timedelta(days=today.weekday())
-    start_time = prev_monday.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
-    end_time = (prev_monday + datetime.timedelta(days=(WEEKS * 7) - 1)).replace(hour=23, minute=59, second=59, microsecond=999999).isoformat() + "Z"
-    
-    # week view
-    # start_time = (datetime.datetime.utcnow() - datetime.timedelta(days=datetime.datetime.utcnow().weekday())).replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
-    # end_time = (datetime.datetime.utcnow() + datetime.timedelta(days=6-datetime.datetime.utcnow().weekday())).replace(hour=23, minute=59, second=59, microsecond=999999).isoformat() + "Z" 
-    
-    events = cal_img.get_events(start_time, end_time)
-    cal_img.populate_events_dict(events)
-
-    # cal_img.draw_week()
-    # cal_img.draw_week_events()
-
-    cal_img.draw_month()
-    cal_img.draw_month_events()
-
-    cal_img.save_image()
