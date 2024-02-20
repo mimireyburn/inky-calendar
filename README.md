@@ -31,7 +31,7 @@ This project aims to combine the best of both worlds: a calendar that's always u
 Edit the `startup.sh` file to include the path to the correct path to `main.py` file. 
 
 1. Open crontab with `crontab -e`
-2. Add ``` @reboot /path/to/startup.sh``` to the end. Save and exit. 
+2. Add ``` @reboot bash /path/to/startup.sh``` to the end. Save and exit. 
 3. chmod +x path/to/startup.sh
 
 This will run the script on boot. You can also add a line to run the script at specific times of day.
