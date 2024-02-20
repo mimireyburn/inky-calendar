@@ -65,8 +65,7 @@ class CalendarImage:
     def populate_events_dict(self, events):
         for event in events:
             start_date, end_date, time, end = self.extract_event_details(event)
-            if event["organizer"]["email"] != self.cal_id:
-                self.add_event_to_dict(start_date, [event["summary"], event["organizer"]["email"], time, end])
+            self.add_event_to_dict(start_date, [event["summary"], event["organizer"]["email"], time, end])
 
 
     def extract_event_details(self, event):
@@ -139,12 +138,13 @@ class CalendarImage:
             # Draw each event
             for i in range(num_events):
                 # truncate event name if too long
-                if len(self.events_dict[date][i][0]) > 18:
-                    self.events_dict[date][i][0] = self.events_dict[date][i][0][:17] + "..."
-                if " w " in self.events_dict[date][i][0]: 
-                    text_colour = self.colors['external_event']
-                else:
+                if len(self.events_dict[date][i][0]) > 17:
+                    self.events_dict[date][i][0] = self.events_dict[date][i][0][:16] + ".."
+                
+                if self.cal_id in self.events_dict[date][i][1]: 
                     text_colour = self.colors['internal_event']
+                else:
+                    text_colour = self.colors['external_event']
                 self.d.text((math.floor(self.box_width*day_of_week) + 5, self.top_padding + self.box_padding + (week*self.box_height) + (i*self.event_height)), self.events_dict[date][i][0], font=self.small_font, fill=text_colour)
 
     
