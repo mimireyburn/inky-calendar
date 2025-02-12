@@ -20,6 +20,8 @@ This project aims to combine the best of both worlds: a calendar that's always u
 4. Create a new service account (+ Create Credientials -> Service account) 
 5. Add new KEY in JSON format (It will download automatically)
 5. Save it as `KEY.json` in the root directory of this project
+6. Add a key-value pair to KEY.json, as follows:
+   ```"calendar_id": "<your-google-email-address>"```
 
 ### Add service account to your calendar
 1. Go to your Google Calendar
