@@ -29,6 +29,14 @@ This project aims to combine the best of both worlds: a calendar that's always u
 3. Scroll down to 'Share with specific people or groups' and click 'Add people and groups'
 4. Add the service account email (something@somethingelse.gserviceaccount.com) as a new person with 'See all event details' permissions
 
+### Create a virtual environment and install dependencies
+1. Create a virtual environment with `python -m venv .venv`
+2. Activate the virtual environment with `source .venv/bin/activate`
+3. Install dependencies with `pip install -r requirements.txt`
+
+### Run the script
+1. Run `python main.py`
+
 ### Running automatically with cron 
 Edit the `startup.sh` file to include the path to the correct path to `main.py` file. 
 
