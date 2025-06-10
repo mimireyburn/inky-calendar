@@ -3,3 +3,5 @@
 *.json
 *.pyc
 *.png
+.venv/*
+lib/*
