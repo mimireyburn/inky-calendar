@@ -28,7 +28,7 @@ class CalendarImage:
         self.small_font_size = self.event_height
 
         self.colors = {
-            # Colour options are: "black", "white", "green", "blue", "red", "yellow", "orange"
+            # Colour options are: "black", "white", "green", "blue", "red", "yellow"
             'outline': "black",
             'days': "black", # days of the week text
             'number': "black",
