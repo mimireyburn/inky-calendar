@@ -15,15 +15,17 @@ class CalendarImage:
         self.initialize_variables()        
 
     def initialize_variables(self):
-        self.width = 800
-        self.height = 480
+        self.width = 1600
+        self.height = 1200
         self.weeks = 4
-        self.top_padding = 35
-        self.box_padding = 30
+        self.top_padding = 55
+        self.box_padding = 35
         self.calendar_height = self.height - self.top_padding - 1
         self.box_height = math.floor(self.calendar_height / self.weeks)
         self.box_width = math.floor(self.width / 7)
-        self.event_height = 16
+        self.event_height = 24
+        self.font_size = 28
+        self.small_font_size = self.event_height
 
         self.colors = {
             # Colour options are: "black", "white", "green", "blue", "red", "yellow", "orange"
@@ -34,15 +36,15 @@ class CalendarImage:
             'today_circle': "red",
             'background': "white",
             'internal_event': "blue",
-            'external_event': "orange",
+            'external_event': "green",
         }
 
         self.prev_monday = (datetime.datetime.utcnow() - datetime.timedelta(days=datetime.datetime.utcnow().weekday())) - datetime.timedelta(days=7)
         self.days_of_week = ["M", "T", "W", "T", "F", "S", "S"]
         self.events_dict = {}
 
-        self.font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 18)
-        self.small_font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", 13)
+        self.font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", self.font_size)
+        self.small_font = ImageFont.truetype("AtkinsonHyperlegible-Regular.ttf", self.small_font_size)
         self.img = Image.new('RGB', (self.width, self.height), color='white')
         self.d = ImageDraw.Draw(self.img)
 
@@ -101,7 +103,7 @@ class CalendarImage:
 
             # Draw calendar days_of_week at top of calendar
             for i in range(7):
-                self.d.text((math.floor((self.width/7)*i) + math.floor(self.width/14), self.top_padding-15), self.days_of_week[i], font=self.small_font, fill=self.colors['days'])
+                self.d.text((math.floor((self.width/7)*i) + math.floor(self.width/14), self.top_padding-(self.event_height*1.1)), self.days_of_week[i], font=self.small_font, fill=self.colors['days'])
 
             # Draw calendar days with labels from start_time to end_time
             for i in range(self.weeks):
@@ -112,18 +114,18 @@ class CalendarImage:
 
                     today = datetime.datetime.utcnow().date()
                     box_date = self.prev_monday.date() + datetime.timedelta(days=(i*7) + j)
-                    radius = 11
+                    radius = 18
                     if box_date == today:
                         self.d.ellipse([
-                            (math.floor(self.box_width*(j+1) - 20) - radius, self.top_padding + (i*self.box_height) + 14 - radius), 
-                            (math.floor(self.box_width*(j+1) - 20) + radius + 8, self.top_padding + (i*self.box_height) + 20 + radius)], fill=self.colors['today_circle'])
+                            (math.floor(self.box_width*(j+1) - 30) - radius, self.top_padding + (i*self.box_height) + 20 - radius), 
+                            (math.floor(self.box_width*(j+1) - 30) + radius + 8, self.top_padding + (i*self.box_height) + 26 + radius)], fill=self.colors['today_circle'])
                         text_color = self.colors['today_text']
 
                     # If day is in next month            
                     if self.prev_monday.day + (i*7) + j > calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]:
-                        self.d.text((math.floor(self.box_width*(j+1) - 25), self.top_padding + (i*self.box_height) + 5), str(self.prev_monday.day + (i*7) + j - calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]), font=self.font, fill=text_color)
+                        self.d.text((math.floor(self.box_width*(j+1) - 35), self.top_padding + (i*self.box_height) + 5), str(self.prev_monday.day + (i*7) + j - calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]), font=self.font, fill=text_color)
                     else:
-                        self.d.text((math.floor(self.box_width*(j+1) - 25), self.top_padding + (i*self.box_height) + 5), str(self.prev_monday.day + (i*7) + j), font=self.font, fill=text_color)
+                        self.d.text((math.floor(self.box_width*(j+1) - 35), self.top_padding + (i*self.box_height) + 5), str(self.prev_monday.day + (i*7) + j), font=self.font, fill=text_color)
 
 
     def draw_month_events(self):
