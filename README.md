@@ -29,6 +29,8 @@ This project aims to combine the best of both worlds: a calendar that's always u
 3. Scroll down to 'Share with specific people or groups' and click 'Add people and groups'
 4. Add the service account email (something@somethingelse.gserviceaccount.com) as a new person with 'See all event details' permissions
 
+N.B. You may also need to allow "Google Workspace smart features" to show invites to events
+
 ### Create a virtual environment and install dependencies
 1. Create a virtual environment with `python -m venv .venv`
 2. Activate the virtual environment with `source .venv/bin/activate`
