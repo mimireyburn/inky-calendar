@@ -95,6 +95,7 @@ class CalendarImage:
             events_result = self.service.events().list(
                 calendarId=self.cal_id, timeMin=start_time, timeMax=end_time, singleEvents=True, orderBy="startTime"
             ).execute()
+            print(events_result)
             return events_result.get("items", [])
         except Exception as e:
             print(f"Error fetching events from Google Calendar: {e}")
@@ -124,7 +125,7 @@ class CalendarImage:
                 
                 self.add_event_to_dict(current_date_str, [
                     event.get("summary", "No title"), 
-                    event.get("organizer", {}).get("email", "unknown"), 
+                    event.get("creator", {}).get("email", "unknown"), 
                     time, 
                     end, 
                     event_type,
