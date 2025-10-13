@@ -277,7 +277,7 @@ class CalendarImage:
 
                     today = datetime.datetime.now().date()
                     box_date = self.prev_monday.date() + datetime.timedelta(days=(i*7) + j)
-                    radius = 18
+                    radius = 24
                     
                     # Only show red circle if start_date is None (default to today) or if start_date equals today
                     should_show_red_circle = False
@@ -292,17 +292,36 @@ class CalendarImage:
                             start_date_obj = self.start_date.date()
                         should_show_red_circle = (box_date == today and start_date_obj == today)
                     
-                    if should_show_red_circle:
-                        self.d.ellipse([
-                            (math.floor(self.box_width*(j+1) - 30) - radius, self.top_padding + (i*self.box_height) + 20 - radius), 
-                            (math.floor(self.box_width*(j+1) - 30) + radius + 8, self.top_padding + (i*self.box_height) + 26 + radius)], fill=self.colors['today_circle'])
-                        text_color = self.colors['today_text']
-
-                    # If day is in next month            
+                    # Calculate day number text
                     if self.prev_monday.day + (i*7) + j > calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]:
-                        self.d.text((math.floor(self.box_width*(j+1) - 35), self.top_padding + (i*self.box_height) + 5), str(self.prev_monday.day + (i*7) + j - calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]), font=self.font, fill=text_color)
+                        day_text = str(self.prev_monday.day + (i*7) + j - calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1])
                     else:
-                        self.d.text((math.floor(self.box_width*(j+1) - 35), self.top_padding + (i*self.box_height) + 5), str(self.prev_monday.day + (i*7) + j), font=self.font, fill=text_color)
+                        day_text = str(self.prev_monday.day + (i*7) + j)
+                    
+                    if should_show_red_circle:
+                        # Calculate text bounding box first
+                        text_bbox = self.d.textbbox((0, 0), day_text, font=self.font)
+                        text_width = text_bbox[2] - text_bbox[0]
+                        text_height = text_bbox[3] - text_bbox[1]
+                        
+                        # Position text at the normal location (same as non-today days)
+                        text_x = math.floor(self.box_width*(j+1) - 35)
+                        text_y = self.top_padding + (i*self.box_height) + 5
+                        
+                        # Calculate circle center based on text position
+                        circle_center_x = text_x + (text_width // 2)
+                        circle_center_y = text_y + (text_height // 2)
+                        
+                        # Draw the circle centered around the text
+                        self.d.ellipse([
+                            (circle_center_x - radius, circle_center_y - radius + radius/2.5), 
+                            (circle_center_x + radius, circle_center_y + radius + radius/2.5)], fill=self.colors['today_circle'])
+                        
+                        text_color = self.colors['today_text']
+                        self.d.text((text_x, text_y), day_text, font=self.font, fill=text_color)
+                    else:
+                        # Draw text normally for non-today days
+                        self.d.text((math.floor(self.box_width*(j+1) - 35), self.top_padding + (i*self.box_height) + 5), day_text, font=self.font, fill=text_color)
 
             # Draw horizontal line at the bottom of the calendar grid
             calendar_bottom = self.top_padding + (self.weeks * self.box_height)
