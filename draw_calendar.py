@@ -14,18 +14,47 @@ class CalendarImage:
         self.initialize_variables()        
 
     def initialize_variables(self):
+        # ===== CALENDAR DIMENSIONS =====
         self.width = 1600
         self.height = 1200
         self.weeks = 4
+        
+        # ===== PADDING AND SPACING =====
         self.top_padding = 55
         self.box_padding = 55
         self.calendar_height = self.height - self.top_padding - 1
-        self.box_height = math.floor(self.calendar_height / self.weeks)-10
+        self.box_height = math.floor(self.calendar_height / self.weeks) - 10
         self.box_width = math.floor(self.width / 7)
+        
+        # ===== EVENT SETTINGS =====
         self.event_height = 24
+        self.event_gap = 9  # Gap between events in pixels
+        self.event_padding = 5  # Padding inside event boxes
+        self.event_rect_padding = 2  # Padding around event rectangles
+        
+        # ===== FONT SETTINGS =====
         self.font_size = 28
         self.small_font_size = self.event_height
-
+        
+        # ===== TODAY CIRCLE SETTINGS =====
+        self.today_circle_radius = 24
+        self.today_circle_offset_y = 2.5  # Vertical offset adjustment for circle positioning
+        
+        # ===== DAY NUMBER POSITIONING =====
+        self.day_number_x_offset = 35  # Distance from right edge of box
+        self.day_number_y_offset = 5   # Distance from top of box
+        
+        # ===== DAYS OF WEEK POSITIONING =====
+        self.days_of_week_y_offset = 1.1  # Multiplier for event_height
+        
+        # ===== COLOR KEY SETTINGS =====
+        self.color_key_height = 40
+        self.color_key_padding = 10
+        self.color_key_square_size = 20
+        self.color_key_text_spacing = 25
+        self.color_key_wrap_margin = 50
+        
+        # ===== CALENDAR COLORS =====
         self.colors = {
             # Colour options are: "black", "white", "green", "blue", "red", "yellow"
             'outline': "black",
@@ -36,6 +65,7 @@ class CalendarImage:
             'background': "white",
         }
         
+        # ===== ORGANIZER COLORS =====
         # Available colors for different organizers
         self.organizer_colors = ["blue", "green", "purple", "orange", "pink", "brown", "gray", "cyan"]
         self.organizer_color_map = {}  # Maps organizer email to color
@@ -192,21 +222,17 @@ class CalendarImage:
             
         # Calculate the bottom area for the key (start just below the calendar line)
         key_start_y = self.top_padding + (self.weeks * self.box_height) + 1
-        key_height = 40  # Height for the key area
-        key_padding = 10  # Padding from edges
         
         # Draw background for the key area
-        self.d.rectangle([(0, key_start_y), (self.width, key_start_y + key_height)], 
+        self.d.rectangle([(0, key_start_y), (self.width, key_start_y + self.color_key_height)], 
                         fill=self.colors['background'])
         
         # Draw "Key:" label
         key_label = "Key:"
-        self.d.text((key_padding, key_start_y + 5), key_label, font=self.small_font, fill=self.colors['number'])
+        self.d.text((self.color_key_padding, key_start_y + 5), key_label, font=self.small_font, fill=self.colors['number'])
         
         # Calculate positions for color squares and labels
-        start_x = key_padding + 50  # Start after "Key:" label
-        square_size = 20
-        text_spacing = 25
+        start_x = self.color_key_padding + 50  # Start after "Key:" label
         
         current_x = start_x
         
@@ -216,18 +242,18 @@ class CalendarImage:
             
             # Draw color square
             square_y = key_start_y + 10
-            self.d.rectangle([(current_x, square_y), (current_x + square_size, square_y + square_size)], 
+            self.d.rectangle([(current_x, square_y), (current_x + self.color_key_square_size, square_y + self.color_key_square_size)], 
                            fill=color, outline=self.colors['outline'], width=1)
             
             # Draw email label (truncated before @)
             label_y = key_start_y + 5
-            self.d.text((current_x + square_size + 5, label_y), display_text, font=self.small_font, fill=self.colors['number'])
+            self.d.text((current_x + self.color_key_square_size + 5, label_y), display_text, font=self.small_font, fill=self.colors['number'])
             
             # Move to next position
-            current_x += square_size + text_spacing + len(display_text) * 14  # Approximate text width
+            current_x += self.color_key_square_size + self.color_key_text_spacing + len(display_text) * 14  # Approximate text width
             
             # If we're running out of space, wrap to next line
-            if current_x > self.width - 50:
+            if current_x > self.width - self.color_key_wrap_margin:
                 current_x = start_x
                 key_start_y += 25
                 square_y = key_start_y + 10
@@ -266,7 +292,7 @@ class CalendarImage:
 
             # Draw calendar days_of_week at top of calendar
             for i in range(7):
-                self.d.text((math.floor((self.width/7)*i) + math.floor(self.width/14), self.top_padding-(self.event_height*1.1)), self.days_of_week[i], font=self.small_font, fill=self.colors['days'])
+                self.d.text((math.floor((self.width/7)*i) + math.floor(self.width/14), self.top_padding-(self.event_height*self.days_of_week_y_offset)), self.days_of_week[i], font=self.small_font, fill=self.colors['days'])
 
             # Draw calendar days with labels from start_time to end_time
             for i in range(self.weeks):
@@ -277,7 +303,6 @@ class CalendarImage:
 
                     today = datetime.datetime.now().date()
                     box_date = self.prev_monday.date() + datetime.timedelta(days=(i*7) + j)
-                    radius = 24
                     
                     # Only show red circle if start_date is None (default to today) or if start_date equals today
                     should_show_red_circle = False
@@ -305,8 +330,8 @@ class CalendarImage:
                         text_height = text_bbox[3] - text_bbox[1]
                         
                         # Position text at the normal location (same as non-today days)
-                        text_x = math.floor(self.box_width*(j+1) - 35)
-                        text_y = self.top_padding + (i*self.box_height) + 5
+                        text_x = math.floor(self.box_width*(j+1) - self.day_number_x_offset)
+                        text_y = self.top_padding + (i*self.box_height) + self.day_number_y_offset
                         
                         # Calculate circle center based on text position
                         circle_center_x = text_x + (text_width // 2)
@@ -314,14 +339,14 @@ class CalendarImage:
                         
                         # Draw the circle centered around the text
                         self.d.ellipse([
-                            (circle_center_x - radius, circle_center_y - radius + radius/2.5), 
-                            (circle_center_x + radius, circle_center_y + radius + radius/2.5)], fill=self.colors['today_circle'])
+                            (circle_center_x - self.today_circle_radius, circle_center_y - self.today_circle_radius + self.today_circle_radius/self.today_circle_offset_y), 
+                            (circle_center_x + self.today_circle_radius, circle_center_y + self.today_circle_radius + self.today_circle_radius/self.today_circle_offset_y)], fill=self.colors['today_circle'])
                         
                         text_color = self.colors['today_text']
                         self.d.text((text_x, text_y), day_text, font=self.font, fill=text_color)
                     else:
                         # Draw text normally for non-today days
-                        self.d.text((math.floor(self.box_width*(j+1) - 35), self.top_padding + (i*self.box_height) + 5), day_text, font=self.font, fill=text_color)
+                        self.d.text((math.floor(self.box_width*(j+1) - self.day_number_x_offset), self.top_padding + (i*self.box_height) + self.day_number_y_offset), day_text, font=self.font, fill=text_color)
 
             # Draw horizontal line at the bottom of the calendar grid
             calendar_bottom = self.top_padding + (self.weeks * self.box_height)
@@ -340,7 +365,6 @@ class CalendarImage:
             
             # Track vertical position for this day to prevent overlapping
             current_y_offset = 0
-            event_gap = 9  # Gap between events in pixels
             
             # Draw each event
             for i in range(num_events):
@@ -364,7 +388,7 @@ class CalendarImage:
                     event_text = "- " + event_text + " -"
                 
                 # Calculate available width for text (box width minus padding)
-                available_width = self.box_width - 10  # 5px padding on each side
+                available_width = self.box_width - (self.event_padding * 2)
                 
                 # Get text bounding box to measure width
                 bbox = self.d.textbbox((0, 0), event_text, font=self.small_font)
@@ -374,8 +398,8 @@ class CalendarImage:
                 y_pos = self.top_padding + self.box_padding + (week*self.box_height) + current_y_offset
                 
                 # Calculate rectangle dimensions
-                rect_x = math.floor(self.box_width*day_of_week) + 3
-                rect_width = self.box_width - 6
+                rect_x = math.floor(self.box_width*day_of_week) + self.event_rect_padding
+                rect_width = self.box_width - (self.event_rect_padding * 2)
                 
                 # If text fits in one line, draw it normally
                 if text_width <= available_width:
@@ -384,10 +408,10 @@ class CalendarImage:
                     self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rect_height)], fill=rect_colour)
                     
                     # Draw text
-                    self.d.text((math.floor(self.box_width*day_of_week) + 5, y_pos), event_text, font=self.small_font, fill=text_colour)
+                    self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), event_text, font=self.small_font, fill=text_colour)
                     
                     # Move to next line for next event (add gap)
-                    current_y_offset += self.event_height + event_gap
+                    current_y_offset += self.event_height + self.event_gap
                 else:
                     # Text is too long, try to split into two lines
                     words = event_text.split()
@@ -447,12 +471,12 @@ class CalendarImage:
                     self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rect_height)], fill=rect_colour)
                     
                     # Draw both lines
-                    self.d.text((math.floor(self.box_width*day_of_week) + 5, y_pos), line1, font=self.small_font, fill=text_colour)
+                    self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), line1, font=self.small_font, fill=text_colour)
                     if line2:
-                        self.d.text((math.floor(self.box_width*day_of_week) + 5, y_pos + self.event_height), line2, font=self.small_font, fill=text_colour)
+                        self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos + self.event_height), line2, font=self.small_font, fill=text_colour)
                     
                     # Move to next position for next event (2 lines + gap)
-                    current_y_offset += (self.event_height * 2) + event_gap
+                    current_y_offset += (self.event_height * 2) + self.event_gap
 
     
     def save_image(self):
