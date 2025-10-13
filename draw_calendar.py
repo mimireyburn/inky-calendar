@@ -67,7 +67,7 @@ class CalendarImage:
         
         # ===== ORGANIZER COLORS =====
         # Available colors for different organizers
-        self.organizer_colors = ["blue", "green", "purple", "orange", "pink", "brown", "gray", "cyan"]
+        self.organizer_colors = ["blue", "green", "purple", "red", "brown", "gray", "cyan"]
         self.organizer_color_map = {}  # Maps organizer email to color
 
         # Calculate prev_monday based on start_date or default to current time
