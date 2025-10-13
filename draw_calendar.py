@@ -113,9 +113,9 @@ class CalendarImage:
         if not os.path.exists(key_file_path):
             raise FileNotFoundError(f"KEY.json file not found at {key_file_path}")
         
-        with open(key_file_path) as f:
-            data = json.load(f)
-        self.cal_id = data["calendar_id"]
+        with open(key_file_path) as credentials_file:
+            credentials_data = json.load(credentials_file)
+        self.cal_id = credentials_data["calendar_id"]
         self.credentials = Credentials.from_service_account_file(key_file_path)
         self.service = build("calendar", "v3", credentials=self.credentials)
 
@@ -135,7 +135,7 @@ class CalendarImage:
 
     def populate_events_dict(self, events):
         for event in events:
-            start_date, end_date, time, end, duration_days = self.extract_event_details(event)
+            start_date, end_date, start_time, end_time, duration_days = self.extract_event_details(event)
             
             # Add event to all days it spans
             start_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d")
@@ -156,8 +156,8 @@ class CalendarImage:
                 self.add_event_to_dict(current_date_str, [
                     event.get("summary", "No title"), 
                     event.get("creator", {}).get("email", "unknown"), 
-                    time, 
-                    end, 
+                    start_time, 
+                    end_time, 
                     event_type,
                     duration_days
                 ])
@@ -166,15 +166,15 @@ class CalendarImage:
     def extract_event_details(self, event):
         is_all_day = False
         try:
-            start = event["start"]["dateTime"]
-            end = event["end"]["dateTime"]
-            start_date, time = start[:10], start
-            end_date, end_time = end[:10], end
+            event_start_datetime = event["start"]["dateTime"]
+            event_end_datetime = event["end"]["dateTime"]
+            start_date, start_time = event_start_datetime[:10], event_start_datetime
+            end_date, end_time = event_end_datetime[:10], event_end_datetime
         except KeyError:
             # This is an all-day event
             start_date = event["start"]["date"]
             end_date = event["end"]["date"]
-            time = "06:00"
+            start_time = "06:00"
             end_time = "06:30"
             is_all_day = True
         
@@ -190,7 +190,7 @@ class CalendarImage:
             # For timed events, we add 1 to include both start and end days
             duration_days = (end_dt - start_dt).days + 1
         
-        return start_date, end_date, time, end_time, duration_days
+        return start_date, end_date, start_time, end_time, duration_days
 
 
     def add_event_to_dict(self, date, event_details):
@@ -291,18 +291,18 @@ class CalendarImage:
             self.d.text((2,0), month_text, font=self.font, fill=self.colors['number'])
 
             # Draw calendar days_of_week at top of calendar
-            for i in range(7):
-                self.d.text((math.floor((self.width/7)*i) + math.floor(self.width/14), self.top_padding-(self.event_height*self.days_of_week_y_offset)), self.days_of_week[i], font=self.small_font, fill=self.colors['days'])
+            for day_index in range(7):
+                self.d.text((math.floor((self.width/7)*day_index) + math.floor(self.width/14), self.top_padding-(self.event_height*self.days_of_week_y_offset)), self.days_of_week[day_index], font=self.small_font, fill=self.colors['days'])
 
             # Draw calendar days with labels from start_time to end_time
-            for i in range(self.weeks):
-                for j in range(7):
-                    self.d.rectangle([(math.floor(self.box_width*j)+1, self.top_padding + (i*self.box_height)), (math.floor(self.box_width*(j+1))+1, self.top_padding + ((i+1)*self.box_height))], outline=self.colors['outline'], width=1)
+            for week_index in range(self.weeks):
+                for day_index in range(7):
+                    self.d.rectangle([(math.floor(self.box_width*day_index)+1, self.top_padding + (week_index*self.box_height)), (math.floor(self.box_width*(day_index+1))+1, self.top_padding + ((week_index+1)*self.box_height))], outline=self.colors['outline'], width=1)
                     
                     text_color = self.colors['number']
 
                     today = datetime.datetime.now().date()
-                    box_date = self.prev_monday.date() + datetime.timedelta(days=(i*7) + j)
+                    box_date = self.prev_monday.date() + datetime.timedelta(days=(week_index*7) + day_index)
                     
                     # Only show red circle if start_date is None (default to today) or if start_date equals today
                     should_show_red_circle = False
@@ -318,20 +318,20 @@ class CalendarImage:
                         should_show_red_circle = (box_date == today and start_date_obj == today)
                     
                     # Calculate day number text
-                    if self.prev_monday.day + (i*7) + j > calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]:
-                        day_text = str(self.prev_monday.day + (i*7) + j - calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1])
+                    if self.prev_monday.day + (week_index*7) + day_index > calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]:
+                        day_text = str(self.prev_monday.day + (week_index*7) + day_index - calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1])
                     else:
-                        day_text = str(self.prev_monday.day + (i*7) + j)
+                        day_text = str(self.prev_monday.day + (week_index*7) + day_index)
                     
                     if should_show_red_circle:
                         # Calculate text bounding box first
-                        text_bbox = self.d.textbbox((0, 0), day_text, font=self.font)
-                        text_width = text_bbox[2] - text_bbox[0]
-                        text_height = text_bbox[3] - text_bbox[1]
+                        text_bounding_box = self.d.textbbox((0, 0), day_text, font=self.font)
+                        text_width = text_bounding_box[2] - text_bounding_box[0]
+                        text_height = text_bounding_box[3] - text_bounding_box[1]
                         
                         # Position text at the normal location (same as non-today days)
-                        text_x = math.floor(self.box_width*(j+1) - self.day_number_x_offset)
-                        text_y = self.top_padding + (i*self.box_height) + self.day_number_y_offset
+                        text_x = math.floor(self.box_width*(day_index+1) - self.day_number_x_offset)
+                        text_y = self.top_padding + (week_index*self.box_height) + self.day_number_y_offset
                         
                         # Calculate circle center based on text position
                         circle_center_x = text_x + (text_width // 2)
@@ -346,7 +346,7 @@ class CalendarImage:
                         self.d.text((text_x, text_y), day_text, font=self.font, fill=text_color)
                     else:
                         # Draw text normally for non-today days
-                        self.d.text((math.floor(self.box_width*(j+1) - self.day_number_x_offset), self.top_padding + (i*self.box_height) + self.day_number_y_offset), day_text, font=self.font, fill=text_color)
+                        self.d.text((math.floor(self.box_width*(day_index+1) - self.day_number_x_offset), self.top_padding + (week_index*self.box_height) + self.day_number_y_offset), day_text, font=self.font, fill=text_color)
 
             # Draw horizontal line at the bottom of the calendar grid
             calendar_bottom = self.top_padding + (self.weeks * self.box_height)
@@ -367,17 +367,17 @@ class CalendarImage:
             current_y_offset = 0
             
             # Draw each event
-            for i in range(num_events):
-                event_data = self.events_dict[date][i]
+            for event_index in range(num_events):
+                event_data = self.events_dict[date][event_index]
                 event_text = event_data[0]
                 event_type = event_data[4] if len(event_data) > 4 else "single"
                 organizer_email = event_data[1]
                 
                 # Get color based on organizer email
-                rect_colour = self.get_organizer_color(organizer_email)
+                rectangle_color = self.get_organizer_color(organizer_email)
                 
                 # Text will be white on colored background
-                text_colour = "white"
+                text_color = "white"
                 
                 # Add visual indicators for multi-day events
                 if event_type == "start":
@@ -391,8 +391,8 @@ class CalendarImage:
                 available_width = self.box_width - (self.event_padding * 2)
                 
                 # Get text bounding box to measure width
-                bbox = self.d.textbbox((0, 0), event_text, font=self.small_font)
-                text_width = bbox[2] - bbox[0]
+                text_bounding_box = self.d.textbbox((0, 0), event_text, font=self.small_font)
+                text_width = text_bounding_box[2] - text_bounding_box[0]
                 
                 # Calculate current Y position based on accumulated offset
                 y_pos = self.top_padding + self.box_padding + (week*self.box_height) + current_y_offset
@@ -404,76 +404,76 @@ class CalendarImage:
                 # If text fits in one line, draw it normally
                 if text_width <= available_width:
                     # Draw rectangle background
-                    rect_height = self.event_height + 4  # Add padding
-                    self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rect_height)], fill=rect_colour)
+                    rectangle_height = self.event_height + 4  # Add padding
+                    self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rectangle_height)], fill=rectangle_color)
                     
                     # Draw text
-                    self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), event_text, font=self.small_font, fill=text_colour)
+                    self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), event_text, font=self.small_font, fill=text_color)
                     
                     # Move to next line for next event (add gap)
                     current_y_offset += self.event_height + self.event_gap
                 else:
                     # Text is too long, try to split into two lines
                     words = event_text.split()
-                    line1 = ""
-                    line2 = ""
+                    first_line = ""
+                    second_line = ""
                     
                     # Find the best split point by trying different combinations
-                    best_split = 0
-                    for i in range(1, len(words)):
-                        test_line1 = " ".join(words[:i])
-                        test_line2 = " ".join(words[i:])
+                    best_split_index = 0
+                    for word_index in range(1, len(words)):
+                        test_first_line = " ".join(words[:word_index])
+                        test_second_line = " ".join(words[word_index:])
                         
                         # Check if both lines fit
-                        bbox1 = self.d.textbbox((0, 0), test_line1, font=self.small_font)
-                        bbox2 = self.d.textbbox((0, 0), test_line2, font=self.small_font)
-                        width1 = bbox1[2] - bbox1[0]
-                        width2 = bbox2[2] - bbox2[0]
+                        first_line_bbox = self.d.textbbox((0, 0), test_first_line, font=self.small_font)
+                        second_line_bbox = self.d.textbbox((0, 0), test_second_line, font=self.small_font)
+                        first_line_width = first_line_bbox[2] - first_line_bbox[0]
+                        second_line_width = second_line_bbox[2] - second_line_bbox[0]
                         
-                        if width1 <= available_width and width2 <= available_width:
-                            best_split = i
-                            line1 = test_line1
-                            line2 = test_line2
+                        if first_line_width <= available_width and second_line_width <= available_width:
+                            best_split_index = word_index
+                            first_line = test_first_line
+                            second_line = test_second_line
                             break
                     
                     # If no perfect split found, use the best one we found
-                    if best_split == 0:
+                    if best_split_index == 0:
                         # Fall back to original logic if no good split found
                         for word in words:
-                            test_line1 = line1 + (" " if line1 else "") + word
-                            bbox = self.d.textbbox((0, 0), test_line1, font=self.small_font)
-                            test_width = bbox[2] - bbox[0]
+                            test_first_line = first_line + (" " if first_line else "") + word
+                            text_bounding_box = self.d.textbbox((0, 0), test_first_line, font=self.small_font)
+                            test_width = text_bounding_box[2] - text_bounding_box[0]
                             
                             if test_width <= available_width:
-                                line1 = test_line1
+                                first_line = test_first_line
                             else:
                                 # First line is full, start second line
-                                if not line2:
-                                    line2 = word
+                                if not second_line:
+                                    second_line = word
                                 else:
-                                    line2 += " " + word
+                                    second_line += " " + word
                     
                     # Check if second line is too long
-                    if line2:
-                        bbox = self.d.textbbox((0, 0), line2, font=self.small_font)
-                        line2_width = bbox[2] - bbox[0]
+                    if second_line:
+                        text_bounding_box = self.d.textbbox((0, 0), second_line, font=self.small_font)
+                        second_line_width = text_bounding_box[2] - text_bounding_box[0]
                         
-                        if line2_width > available_width:
+                        if second_line_width > available_width:
                             # Second line is too long, truncate it
-                            while line2 and line2_width > available_width:
-                                line2 = line2[:-1]
-                                bbox = self.d.textbbox((0, 0), line2 + "..", font=self.small_font)
-                                line2_width = bbox[2] - bbox[0]
-                            line2 += ".."
+                            while second_line and second_line_width > available_width:
+                                second_line = second_line[:-1]
+                                text_bounding_box = self.d.textbbox((0, 0), second_line + "..", font=self.small_font)
+                                second_line_width = text_bounding_box[2] - text_bounding_box[0]
+                            second_line += ".."
                     
                     # Draw rectangle background for two-line event
-                    rect_height = (self.event_height * 2) + 4  # Two lines plus padding
-                    self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rect_height)], fill=rect_colour)
+                    rectangle_height = (self.event_height * 2) + 4  # Two lines plus padding
+                    self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rectangle_height)], fill=rectangle_color)
                     
                     # Draw both lines
-                    self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), line1, font=self.small_font, fill=text_colour)
-                    if line2:
-                        self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos + self.event_height), line2, font=self.small_font, fill=text_colour)
+                    self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), first_line, font=self.small_font, fill=text_color)
+                    if second_line:
+                        self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos + self.event_height), second_line, font=self.small_font, fill=text_color)
                     
                     # Move to next position for next event (2 lines + gap)
                     current_y_offset += (self.event_height * 2) + self.event_gap
