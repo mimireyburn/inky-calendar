@@ -58,8 +58,12 @@ After=systemd-networkd-wait-online.service  # Ensures actual network connectivit
 Type=simple
 User=pi # Change to your username
 Group=pi # Change to your group (usually same as username)
+
 # Run inside your project folder so relative paths (e.g. KEY.json) work
 WorkingDirectory=/home/pi/inky-calendar # Change to your project folder, remember this will change if you change the username
+
+# Update code before start (fast-forward only) You can uncomment this if you want to update the code before starting the service.
+# ExecStartPre=/usr/bin/git -C /home/pi/inky-calendar pull --ff-only -->
 
 # Use the Python from your venv directly (no need to "activate")
 Environment=PYTHONUNBUFFERED=1
