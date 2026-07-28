@@ -44,56 +44,19 @@ N.B. You may also need to allow "Google Workspace smart features" to show invite
 ### Run the script
 1. Run `python main.py`
 
-### Running automatically with systemd 
-This is a simple script that runs the `main.py` file on the Raspberry Pi. You can edit it to run at specific times of day and on boot. 
+### Running automatically with cron 
+Edit the `startup.sh` file to include the path to the correct path to `main.py` file. 
 
-> **Removing cronjobs:**  
-> Previously, I used cron to run the script, but systemd is more robust and easier to manage. The `startup.sh` script remains in the repo for reference, but it's not needed when using systemd. If you were using cronjobs before, you can remove them by running `crontab -e` and deleting the relevant lines at the end of the file.
+1. Open crontab with `crontab -e`
+2. Add ``` @reboot bash /path/to/startup.sh``` to the end. Save and exit. 
+3. chmod +x path/to/startup.sh
 
-1. Create a new systemd service file with `sudo nano /etc/systemd/system/inky-calendar.service`
-2. Add the following content:
+This will run the script on boot. You can also add a line to run the script at specific times of day.
 
-```
-[Unit]
-Description=Inky Calendar (Google Calendar to Inky display)
-# Wait until the network is actually up (for Google Calendar calls)
-Wants=network-online.target
-After=network-online.target
-After=systemd-networkd-wait-online.service  # Ensures actual network connectivity
-
-[Service]
-Type=simple
-User=pi # Change to your username
-Group=pi # Change to your group (usually same as username)
-
-# Run inside your project folder so relative paths (e.g. KEY.json) work
-WorkingDirectory=/home/pi/inky-calendar # Change to your project folder, remember this will change if you change the username
-
-# Update code before start (fast-forward only) You can uncomment this if you want to update the code before starting the service.
-# ExecStartPre=/usr/bin/git -C /home/pi/inky-calendar pull --ff-only -->
-
-# Use the Python from your venv directly (no need to "activate")
-Environment=PYTHONUNBUFFERED=1
-ExecStart=/home/pi/inky-calendar/.venv/bin/python /home/pi/inky-calendar/main.py
-
-# Auto-restart on crashes; space out retries
-Restart=on-failure
-RestartSec=10
-
-# Send logs to the journal
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-```
-
-3. Save and exit.
-4. Reload systemd with `sudo systemctl daemon-reload`
-5. Restart the service with `sudo systemctl restart inky-calendar.service`
-6. Check the status of the service with `sudo systemctl status inky-calendar.service`
-7. Check the logs of the service with `journalctl -u inky-calendar.service -e`
-
+## To-Do
+- [ ] Add support for week view
+- [ ] Add support for multi-day events
+- [ ] Refactor code to plot day-by-day instead of from prev_monday
 
 ## FAQ
 
