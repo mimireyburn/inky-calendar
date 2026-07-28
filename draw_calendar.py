@@ -1,6 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from pilmoji import Pilmoji
+from pilmoji.source import TwitterEmojiSource
+import emoji as emoji_lib
 import datetime
 import calendar
 import math
@@ -93,6 +96,10 @@ class CalendarImage:
         self.days_of_week = ["M", "T", "W", "T", "F", "S", "S"]
         self.events_dict = {}
 
+        # ===== EMOJI SUPPORT (Twemoji via pilmoji) =====
+        self.emoji_source = TwitterEmojiSource()
+        self._emoji_support_cache = {}
+
         # Get the directory of the current script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         font_path = os.path.join(script_dir, "AtkinsonHyperlegible-Regular.ttf")
@@ -137,6 +144,19 @@ class CalendarImage:
             return []
 
 
+    def filter_unsupported_emoji(self, text):
+        for match in emoji_lib.emoji_list(text):
+            char = match["emoji"]
+            if char not in self._emoji_support_cache:
+                try:
+                    self._emoji_support_cache[char] = self.emoji_source.get_emoji(char) is not None
+                except Exception:
+                    self._emoji_support_cache[char] = False
+            if not self._emoji_support_cache[char]:
+                text = text.replace(char, "")
+        return text.strip()
+
+
     def populate_events_dict(self, events):
         for event in events:
             start_date, end_date, start_time, end_time, duration_days = self.extract_event_details(event)
@@ -158,7 +178,7 @@ class CalendarImage:
                     event_type = "middle"
                 
                 self.add_event_to_dict(current_date_str, [
-                    event.get("summary", "No title"), 
+                    self.filter_unsupported_emoji(event.get("summary", "No title")),
                     event.get("creator", {}).get("email", "unknown"), 
                     start_time, 
                     end_time, 
@@ -358,6 +378,11 @@ class CalendarImage:
 
 
     def draw_month_events(self):
+        with Pilmoji(self.img, source=self.emoji_source) as pilmoji_draw:
+            self._draw_month_events(pilmoji_draw)
+
+
+    def _draw_month_events(self, pilmoji_draw):
         # Draw events on calendar
         for date in self.events_dict:
             # Get day of week of event
@@ -394,9 +419,8 @@ class CalendarImage:
                 # Calculate available width for text (box width minus padding)
                 available_width = self.box_width - (self.event_padding * 2)
                 
-                # Get text bounding box to measure width
-                text_bounding_box = self.d.textbbox((0, 0), event_text, font=self.small_font)
-                text_width = text_bounding_box[2] - text_bounding_box[0]
+                # Get text width (emoji-aware)
+                text_width, _ = pilmoji_draw.getsize(event_text, font=self.small_font)
                 
                 # Calculate current Y position based on accumulated offset
                 y_pos = self.top_padding + self.box_padding + (week*self.box_height) + current_y_offset
@@ -412,7 +436,7 @@ class CalendarImage:
                     self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rectangle_height)], fill=rectangle_color)
                     
                     # Draw text
-                    self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), event_text, font=self.small_font, fill=text_color)
+                    pilmoji_draw.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), event_text, font=self.small_font, fill=text_color, emoji_position_offset=(0, -3))
                     
                     # Move to next line for next event (add gap)
                     current_y_offset += self.event_height + self.event_gap
@@ -429,10 +453,8 @@ class CalendarImage:
                         test_second_line = " ".join(words[word_index:])
                         
                         # Check if both lines fit
-                        first_line_bbox = self.d.textbbox((0, 0), test_first_line, font=self.small_font)
-                        second_line_bbox = self.d.textbbox((0, 0), test_second_line, font=self.small_font)
-                        first_line_width = first_line_bbox[2] - first_line_bbox[0]
-                        second_line_width = second_line_bbox[2] - second_line_bbox[0]
+                        first_line_width, _ = pilmoji_draw.getsize(test_first_line, font=self.small_font)
+                        second_line_width, _ = pilmoji_draw.getsize(test_second_line, font=self.small_font)
                         
                         if first_line_width <= available_width and second_line_width <= available_width:
                             best_split_index = word_index
@@ -445,8 +467,7 @@ class CalendarImage:
                         # Fall back to original logic if no good split found
                         for word in words:
                             test_first_line = first_line + (" " if first_line else "") + word
-                            text_bounding_box = self.d.textbbox((0, 0), test_first_line, font=self.small_font)
-                            test_width = text_bounding_box[2] - text_bounding_box[0]
+                            test_width, _ = pilmoji_draw.getsize(test_first_line, font=self.small_font)
                             
                             if test_width <= available_width:
                                 first_line = test_first_line
@@ -459,15 +480,13 @@ class CalendarImage:
                     
                     # Check if second line is too long
                     if second_line:
-                        text_bounding_box = self.d.textbbox((0, 0), second_line, font=self.small_font)
-                        second_line_width = text_bounding_box[2] - text_bounding_box[0]
-                        
+                        second_line_width, _ = pilmoji_draw.getsize(second_line, font=self.small_font)
+
                         if second_line_width > available_width:
                             # Second line is too long, truncate it
                             while second_line and second_line_width > available_width:
                                 second_line = second_line[:-1]
-                                text_bounding_box = self.d.textbbox((0, 0), second_line + "..", font=self.small_font)
-                                second_line_width = text_bounding_box[2] - text_bounding_box[0]
+                                second_line_width, _ = pilmoji_draw.getsize(second_line + "..", font=self.small_font)
                             second_line += ".."
                     
                     # Draw rectangle background for two-line event
@@ -475,9 +494,9 @@ class CalendarImage:
                     self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rectangle_height)], fill=rectangle_color)
                     
                     # Draw both lines
-                    self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), first_line, font=self.small_font, fill=text_color)
+                    pilmoji_draw.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), first_line, font=self.small_font, fill=text_color, emoji_position_offset=(0, -2))
                     if second_line:
-                        self.d.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos + self.event_height), second_line, font=self.small_font, fill=text_color)
+                        pilmoji_draw.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos + self.event_height), second_line, font=self.small_font, fill=text_color, emoji_position_offset=(0, -2))
                     
                     # Move to next position for next event (2 lines + gap)
                     current_y_offset += (self.event_height * 2) + self.event_gap
