@@ -14,7 +14,7 @@ This project aims to combine the best of both worlds: a calendar that's always u
 ## Setup
 
 ### You will need:
-- An Inky hat e-ink display (Currently, I use a [13.3" Inky Impression Spectra](https://shop.pimoroni.com/products/inky-impression-7-3?variant=55186435277179), see [inky13.3 branch](https://github.com/mimireyburn/inky-calendar/tree/inky-13.3))
+- An Inky hat e-ink display (Currently, I use a [13.3" Inky Impression Spectra](https://shop.pimoroni.com/products/inky-impression-7-3?variant=55186435277179), which this branch targets directly at 1600x1200)
 - A Raspberry Pi (I use a Pi 3B. Haven't tried it yet, but you could use a Pi Zero W)
 - A power supply for the Raspberry Pi (you could use a battery setup, but I also haven't tried it yet)
 
