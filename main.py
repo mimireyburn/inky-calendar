@@ -3,6 +3,7 @@ from PIL import Image
 from draw_calendar import CalendarImage
 import time
 import datetime
+import threading
 
 # Conditional imports for Raspberry Pi specific modules
 try:
@@ -77,51 +78,66 @@ if __name__ == "__main__":
             print(f"Error setting up GPIO: {e}")
             GPIO_AVAILABLE = False
 
+    # Shared state, read/written from both the main thread (periodic calendar
+    # check) and the GPIO interrupt callbacks (button presses), so it's guarded
+    # by a lock rather than relying on the two never overlapping.
+    state_lock = threading.Lock()
+    start_date = datetime.datetime.now()
+    last_fingerprint = None
+    last_rendered_date = None
+
+    def refresh_calendar(new_start_date):
+        global start_date, last_fingerprint, last_rendered_date
+        with state_lock:
+            start_date = new_start_date
+            last_fingerprint = getMonth(start_date)
+            display()
+            last_rendered_date = datetime.datetime.now().date()
+
+    def on_button_a(channel):
+        print("Button A pressed showing calendar around today")
+        refresh_calendar(datetime.datetime.now())
+
+    def on_button_b(channel):
+        print("Button B pressed showing calendar around 3 weeks from start_date")
+        with state_lock:
+            next_start_date = start_date + datetime.timedelta(weeks=3)
+        refresh_calendar(next_start_date)
+
+    def on_button_c(channel):
+        print("Button C pressed")
+
     try:
-        start_date = datetime.datetime.now()
-        last_fingerprint = getMonth()  # Default behavior - shows calendar around today
-        display()
-        last_rendered_date = datetime.datetime.now().date()
-        last_check_time = time.time()
+        refresh_calendar(start_date)  # Default behavior - shows calendar around today
 
         if GPIO_AVAILABLE:
-            # Poll GPIO buttons
+            # Interrupt-driven buttons: the Pi sleeps instead of busy-polling
+            # the pins, and a press wakes the matching callback immediately.
+            GPIO.add_event_detect(BUTTONS[0], GPIO.FALLING, callback=on_button_a, bouncetime=300)
+            GPIO.add_event_detect(BUTTONS[1], GPIO.FALLING, callback=on_button_b, bouncetime=300)
+            GPIO.add_event_detect(BUTTONS[2], GPIO.FALLING, callback=on_button_c, bouncetime=300)
+
             while True:
                 try:
-                    if GPIO.input(BUTTONS[0]) == GPIO.LOW:
-                        print("Button A pressed showing calendar around today")
-                        start_date = datetime.datetime.now()
-                        last_fingerprint = getMonth()
-                        display()
-                        last_rendered_date = datetime.datetime.now().date()
-                        last_check_time = time.time()
-                        time.sleep(0.1)  # prevent CPU overload
-                    if GPIO.input(BUTTONS[1]) == GPIO.LOW:
-                        print("Button B pressed showing calendar around 3 weeks from start_date")
-                        start_date += datetime.timedelta(weeks=3)
-                        last_fingerprint = getMonth(start_date)
-                        display()
-                        last_rendered_date = datetime.datetime.now().date()
-                        last_check_time = time.time()
-                        time.sleep(0.1)  # prevent CPU overload
-                    if GPIO.input(BUTTONS[2]) == GPIO.LOW:
-                        print("Button C pressed")
+                    time.sleep(CALENDAR_CHECK_INTERVAL_SECONDS)
+                    print("Checking Google Calendar for updates...")
 
-                    if time.time() - last_check_time >= CALENDAR_CHECK_INTERVAL_SECONDS:
-                        last_check_time = time.time()
-                        print("Checking Google Calendar for updates...")
-                        new_fingerprint = getMonth(start_date)
-                        today_changed = datetime.datetime.now().date() != last_rendered_date
+                    with state_lock:
+                        current_start_date = start_date
+                        previous_fingerprint = last_fingerprint
+                        previous_rendered_date = last_rendered_date
 
-                        if new_fingerprint != last_fingerprint or today_changed:
-                            print("Calendar changed, refreshing display...")
+                    new_fingerprint = getMonth(current_start_date)
+                    today_changed = datetime.datetime.now().date() != previous_rendered_date
+
+                    if new_fingerprint != previous_fingerprint or today_changed:
+                        print("Calendar changed, refreshing display...")
+                        with state_lock:
                             display()
                             last_fingerprint = new_fingerprint
                             last_rendered_date = datetime.datetime.now().date()
-                        else:
-                            print("No changes detected.")
-
-                    time.sleep(0.1)  # prevent CPU overload
+                    else:
+                        print("No changes detected.")
                 except KeyboardInterrupt:
                     break
         else:
