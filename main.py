@@ -111,9 +111,6 @@ if __name__ == "__main__":
             next_start_date = start_date + datetime.timedelta(weeks=3)
         refresh_calendar(next_start_date)
 
-    def on_button_c(channel):
-        print("Button C pressed")
-
     try:
         refresh_calendar(start_date)  # Default behavior - shows calendar around today
 
@@ -122,7 +119,6 @@ if __name__ == "__main__":
             # the pins, and a press wakes the matching callback immediately.
             GPIO.add_event_detect(BUTTONS[0], GPIO.FALLING, callback=on_button_a, bouncetime=300)
             GPIO.add_event_detect(BUTTONS[1], GPIO.FALLING, callback=on_button_b, bouncetime=300)
-            GPIO.add_event_detect(BUTTONS[2], GPIO.FALLING, callback=on_button_c, bouncetime=300)
 
             while True:
                 try:
