@@ -327,11 +327,14 @@ class CalendarImage:
             for day_index in range(7):
                 self.d.text((math.floor((self.width/7)*day_index) + math.floor(self.width/14), self.top_padding-(self.event_height*self.days_of_week_y_offset)), self.days_of_week[day_index], font=self.small_font, fill=self.colors['days'])
 
-            # Draw calendar days with labels from start_time to end_time
+            # Draw all grid cell outlines first, so day numbers/circles can be drawn on top of every line
             for week_index in range(self.weeks):
                 for day_index in range(7):
                     self.d.rectangle([(math.floor(self.box_width*day_index)+1, self.top_padding + (week_index*self.box_height)), (math.floor(self.box_width*(day_index+1))+1, self.top_padding + ((week_index+1)*self.box_height))], outline=self.colors['outline'], width=1)
-                    
+
+            # Draw calendar days with labels from start_time to end_time
+            for week_index in range(self.weeks):
+                for day_index in range(7):
                     text_color = self.colors['number']
 
                     today = datetime.datetime.now().date()
