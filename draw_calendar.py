@@ -1,11 +1,15 @@
 from PIL import Image, ImageDraw, ImageFont
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-import datetime 
+import datetime
 import calendar
 import math
 import json
-import os 
+import os
+import sys
+
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
 
 class CalendarImage:
     def __init__(self, start_date=None):
@@ -67,7 +71,7 @@ class CalendarImage:
         
         # ===== ORGANIZER COLORS =====
         # Available colors for different organizers
-        self.organizer_colors = ["blue", "green", "purple", "red", "brown", "gray", "cyan"]
+        self.organizer_colors = ["blue", "green", "purple", "red", "yellow", "brown", "gray", "cyan"]
         self.organizer_color_map = {}  # Maps organizer email to color
 
         # Calculate prev_monday based on start_date or default to current time
