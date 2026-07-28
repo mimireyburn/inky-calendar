@@ -5,3 +5,4 @@
 *.png
 .venv/*
 lib/*
+.DS_Store

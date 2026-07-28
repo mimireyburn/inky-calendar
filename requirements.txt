@@ -3,4 +3,6 @@ Pillow>=10.0.0
 google-auth>=2.0.0
 google-api-python-client>=2.0.0
 python-dotenv>=1.0.0
-inky>=1.0.0 
+inky>=2.2.1
+pilmoji>=2.0.5
+emoji>=2.0.0 
