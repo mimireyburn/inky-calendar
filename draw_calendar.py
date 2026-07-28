@@ -293,6 +293,21 @@ class CalendarImage:
                 label_y = key_start_y + 15
 
 
+    def draw_last_updated(self):
+        """Draw a 'last updated' timestamp inline with the color key, bottom right"""
+        timestamp_text = "Updated " + datetime.datetime.now().strftime("%a %d %b, %H:%M")
+
+        text_bbox = self.d.textbbox((0, 0), timestamp_text, font=self.small_font)
+        text_width = text_bbox[2] - text_bbox[0]
+
+        key_start_y = self.top_padding + (self.weeks * self.box_height) + 1
+        label_y = key_start_y + 5  # Same baseline as the "Key:" label text
+
+        x = self.width - text_width - self.color_key_padding
+
+        self.d.text((x, label_y), timestamp_text, font=self.small_font, fill=self.colors['number'])
+
+
     def draw_month(self):
             # Make background blue
             self.d.rectangle([(0, 0), (self.width, self.height)], fill=self.colors['background'])
@@ -384,9 +399,9 @@ class CalendarImage:
                         # Draw text normally for non-today days
                         self.d.text((math.floor(self.box_width*(day_index+1) - self.day_number_x_offset), self.top_padding + (week_index*self.box_height) + self.day_number_y_offset), day_text, font=self.font, fill=text_color)
 
-            # Draw horizontal line at the bottom of the calendar grid
+            # Draw horizontal line at the bottom of the calendar grid, aligned with the grid cell edges
             calendar_bottom = self.top_padding + (self.weeks * self.box_height)
-            self.d.rectangle([(0, calendar_bottom), (self.width, calendar_bottom + 1)], fill=self.colors['outline'])
+            self.d.rectangle([(1, calendar_bottom), (self.box_width*7 + 1, calendar_bottom + 1)], fill=self.colors['outline'])
 
 
     def draw_month_events(self):
