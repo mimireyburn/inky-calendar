@@ -228,6 +228,10 @@ class CalendarImage:
         light_colors = {"orange", "yellow", "gold", "khaki", "tan", "wheat", "pink", "lightgray", "lightgrey"}
         return "black" if background_color in light_colors else "white"
 
+    def get_text_stroke_for_color(self, text_color):
+        """Black text needs a stroke to match the visual weight of white text"""
+        return (1, "black") if text_color == "black" else (0, None)
+
     def get_organizer_color(self, organizer_email):
         """Assign a unique color to each organizer email address"""
         if organizer_email not in self.organizer_color_map:
@@ -412,6 +416,7 @@ class CalendarImage:
                 
                 # Use black text on light backgrounds, white otherwise
                 text_color = self.get_text_color_for_background(rectangle_color)
+                stroke_width, stroke_fill = self.get_text_stroke_for_color(text_color)
                 
                 # Add visual indicators for multi-day events
                 if event_type == "start":
@@ -441,7 +446,7 @@ class CalendarImage:
                     self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rectangle_height)], fill=rectangle_color)
                     
                     # Draw text
-                    pilmoji_draw.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), event_text, font=self.small_font, fill=text_color, emoji_position_offset=(0, -3))
+                    pilmoji_draw.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), event_text, font=self.small_font, fill=text_color, stroke_width=stroke_width, stroke_fill=stroke_fill, emoji_position_offset=(0, -3))
                     
                     # Move to next line for next event (add gap)
                     current_y_offset += self.event_height + self.event_gap
@@ -499,9 +504,9 @@ class CalendarImage:
                     self.d.rectangle([(rect_x, y_pos - 2), (rect_x + rect_width, y_pos + rectangle_height)], fill=rectangle_color)
                     
                     # Draw both lines
-                    pilmoji_draw.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), first_line, font=self.small_font, fill=text_color, emoji_position_offset=(0, -2))
+                    pilmoji_draw.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos), first_line, font=self.small_font, fill=text_color, stroke_width=stroke_width, stroke_fill=stroke_fill, emoji_position_offset=(0, -2))
                     if second_line:
-                        pilmoji_draw.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos + self.event_height), second_line, font=self.small_font, fill=text_color, emoji_position_offset=(0, -2))
+                        pilmoji_draw.text((math.floor(self.box_width*day_of_week) + self.event_padding, y_pos + self.event_height), second_line, font=self.small_font, fill=text_color, stroke_width=stroke_width, stroke_fill=stroke_fill, emoji_position_offset=(0, -2))
                     
                     # Move to next position for next event (2 lines + gap)
                     current_y_offset += (self.event_height * 2) + self.event_gap
