@@ -80,6 +80,7 @@ if __name__ == "__main__":
     if GPIO_AVAILABLE:
         try:
             GPIO.setmode(GPIO.BCM)
+            GPIO.cleanup(BUTTONS)  # release stale edge-detect state left by a prior unclean exit
             GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         except Exception as e:
             print(f"Error setting up GPIO: {e}")
@@ -117,8 +118,13 @@ if __name__ == "__main__":
         if GPIO_AVAILABLE:
             # Interrupt-driven buttons: the Pi sleeps instead of busy-polling
             # the pins, and a press wakes the matching callback immediately.
-            GPIO.add_event_detect(BUTTONS[0], GPIO.FALLING, callback=on_button_a, bouncetime=300)
-            GPIO.add_event_detect(BUTTONS[1], GPIO.FALLING, callback=on_button_b, bouncetime=300)
+            try:
+                GPIO.add_event_detect(BUTTONS[0], GPIO.FALLING, callback=on_button_a, bouncetime=300)
+                GPIO.add_event_detect(BUTTONS[1], GPIO.FALLING, callback=on_button_b, bouncetime=300)
+            except Exception as e:
+                print(f"Error setting up button interrupts: {e}")
+                print("Continuing without button support; calendar will still auto-refresh.")
+                GPIO_AVAILABLE = False
 
             while True:
                 try:
