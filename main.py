@@ -58,6 +58,12 @@ def display():
         inky_display.set_image(image, saturation=saturation)
         inky_display.set_border(inky_display.WHITE)
         inky_display.show()
+    except SystemExit as e:
+        # Pimoroni's gpiodevice library calls sys.exit() instead of raising
+        # when a required pin (e.g. Chip Select) is already claimed elsewhere,
+        # so this must be caught separately from Exception.
+        print(f"Error displaying on Inky: pin conflict ({e})")
+        print("Calendar image saved as 'calendar_image.png'")
     except Exception as e:
         print(f"Error displaying on Inky: {e}")
         print("Calendar image saved as 'calendar_image.png'")
