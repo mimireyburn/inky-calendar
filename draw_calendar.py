@@ -74,7 +74,7 @@ class CalendarImage:
         
         # ===== ORGANIZER COLORS =====
         # Available colors for different organizers
-        self.organizer_colors = ["blue", "green", "brown", "indigo", "navy", "olive"]
+        self.organizer_colors = ["blue", "green", "brown", "yellow", "gray", "olive"]
         self.organizer_color_map = {}  # Maps organizer email to color
 
         # Calculate prev_monday based on start_date or default to current time
@@ -222,6 +222,11 @@ class CalendarImage:
             self.events_dict[date].append(event_details)
         else:
             self.events_dict[date] = [event_details]
+
+    def get_text_color_for_background(self, background_color):
+        """Return black text for light backgrounds, white text otherwise"""
+        light_colors = {"orange", "yellow", "gold", "khaki", "tan", "wheat", "pink", "lightgray", "lightgrey"}
+        return "black" if background_color in light_colors else "white"
 
     def get_organizer_color(self, organizer_email):
         """Assign a unique color to each organizer email address"""
@@ -405,8 +410,8 @@ class CalendarImage:
                 # Get color based on organizer email
                 rectangle_color = self.get_organizer_color(organizer_email)
                 
-                # Text will be white on colored background
-                text_color = "white"
+                # Use black text on light backgrounds, white otherwise
+                text_color = self.get_text_color_for_background(rectangle_color)
                 
                 # Add visual indicators for multi-day events
                 if event_type == "start":
