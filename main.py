@@ -33,6 +33,7 @@ def getMonth(start_date=None):
     cal_img.draw_month()
     cal_img.draw_month_events()
     cal_img.draw_color_key()  # Draw the color key at the bottom
+    cal_img.draw_last_updated()  # Draw the last updated timestamp
     cal_img.save_image()
 
     # Fingerprint of what's currently on screen, so callers can tell whether
