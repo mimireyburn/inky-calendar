@@ -74,8 +74,8 @@ CALENDAR_CHECK_INTERVAL_SECONDS = 5 * 60  # how often to check Google Calendar f
 
 if __name__ == "__main__":
     # set up GPIO buttons
-    BUTTONS = [5, 6, 16, 24]
-    LABELS = ["A", "B", "C", "D"]
+    BUTTONS = [5, 6, 24]
+    LABELS = ["A", "B", "D"]
 
     if GPIO_AVAILABLE:
         try:
