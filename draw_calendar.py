@@ -355,18 +355,7 @@ class CalendarImage:
                     today = datetime.datetime.now().date()
                     box_date = self.prev_monday.date() + datetime.timedelta(days=(week_index*7) + day_index)
                     
-                    # Only show red circle if start_date is None (default to today) or if start_date equals today
-                    should_show_red_circle = False
-                    if self.start_date is None:
-                        # Default behavior - show red circle for today
-                        should_show_red_circle = (box_date == today)
-                    else:
-                        # If start_date is provided, only show red circle if start_date equals today
-                        if isinstance(self.start_date, str):
-                            start_date_obj = datetime.datetime.strptime(self.start_date, "%Y-%m-%d").date()
-                        else:
-                            start_date_obj = self.start_date.date()
-                        should_show_red_circle = (box_date == today and start_date_obj == today)
+                    should_show_red_circle = (box_date == today)
                     
                     # Calculate day number text
                     if self.prev_monday.day + (week_index*7) + day_index > calendar.monthrange(self.prev_monday.year, self.prev_monday.month)[1]:
