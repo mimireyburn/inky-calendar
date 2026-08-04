@@ -225,7 +225,7 @@ class CalendarImage:
 
     def get_text_color_for_background(self, background_color):
         """Return black text for light backgrounds, white text otherwise"""
-        light_colors = {"orange", "yellow", "gold", "khaki", "tan", "wheat", "pink", "lightgray", "lightgrey"}
+        light_colors = {"gray", "orange", "yellow", "gold", "khaki", "tan", "wheat", "pink", "lightgray", "lightgrey"}
         return "black" if background_color in light_colors else "white"
 
     def get_text_stroke_for_color(self, text_color):
