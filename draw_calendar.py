@@ -132,16 +132,27 @@ class CalendarImage:
 
 
     def get_events(self, start_time, end_time):
+        # Returns None (not []) on failure so callers can tell "fetch failed"
+        # apart from "calendar is genuinely empty" and keep the last good image.
+        events = []
+        page_token = None
         try:
-            events_result = self.service.events().list(
-                calendarId=self.cal_id, timeMin=start_time, timeMax=end_time, singleEvents=True, orderBy="startTime"
-            ).execute()
-            print(events_result)
-            return events_result.get("items", [])
+            while True:
+                # num_retries makes the client retry transient failures
+                # (network errors, 429, 5xx) with exponential backoff.
+                events_result = self.service.events().list(
+                    calendarId=self.cal_id, timeMin=start_time, timeMax=end_time, singleEvents=True,
+                    orderBy="startTime", maxResults=2500, pageToken=page_token
+                ).execute(num_retries=3)
+                events.extend(events_result.get("items", []))
+                page_token = events_result.get("nextPageToken")
+                if not page_token:
+                    break
+            print(f"Fetched {len(events)} events")
+            return events
         except Exception as e:
             print(f"Error fetching events from Google Calendar: {e}")
-            print("Continuing without events...")
-            return []
+            return None
 
 
     def filter_unsupported_emoji(self, text):

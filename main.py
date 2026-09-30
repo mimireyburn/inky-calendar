@@ -28,6 +28,10 @@ def getMonth(start_date=None):
     end_time = (cal_img.prev_monday + datetime.timedelta(days=(cal_img.weeks * 7) - 1)).replace(hour=23, minute=59, second=59, microsecond=999999).isoformat() + "Z"
 
     events = cal_img.get_events(start_time, end_time)
+    if events is None:
+        # Fetch failed: don't overwrite the image, so the screen keeps the last good calendar.
+        print("Skipping render because events could not be fetched.")
+        return None
     cal_img.populate_events_dict(events)
     cal_img.print_color_mapping()  # Show which organizers got which colors
     cal_img.draw_month()
@@ -91,29 +95,36 @@ if __name__ == "__main__":
     # by a lock rather than relying on the two never overlapping.
     state_lock = threading.Lock()
     start_date = datetime.datetime.now()
+    # True while showing the calendar around today (startup / Button A), so the
+    # view follows the date forward; False after paging ahead with Button B.
+    viewing_today = True
     last_fingerprint = None
     last_rendered_date = None
 
-    def refresh_calendar(new_start_date):
-        global start_date, last_fingerprint, last_rendered_date
+    def refresh_calendar(new_start_date, follow_today):
+        global start_date, viewing_today, last_fingerprint, last_rendered_date
         with state_lock:
+            fingerprint = getMonth(new_start_date)
+            if fingerprint is None:
+                return  # fetch failed; leave the current screen and start_date as they are
             start_date = new_start_date
-            last_fingerprint = getMonth(start_date)
+            viewing_today = follow_today
+            last_fingerprint = fingerprint
             display()
             last_rendered_date = datetime.datetime.now().date()
 
     def on_button_a(channel):
         print("Button A pressed showing calendar around today")
-        refresh_calendar(datetime.datetime.now())
+        refresh_calendar(datetime.datetime.now(), follow_today=True)
 
     def on_button_b(channel):
         print("Button B pressed showing calendar around 3 weeks from start_date")
         with state_lock:
             next_start_date = start_date + datetime.timedelta(weeks=3)
-        refresh_calendar(next_start_date)
+        refresh_calendar(next_start_date, follow_today=False)
 
     try:
-        refresh_calendar(start_date)  # Default behavior - shows calendar around today
+        refresh_calendar(start_date, follow_today=True)  # Default behavior - shows calendar around today
 
         if GPIO_AVAILABLE:
             # Interrupt-driven buttons: the Pi sleeps instead of busy-polling
@@ -132,17 +143,28 @@ if __name__ == "__main__":
                     print("Checking Google Calendar for updates...")
 
                     with state_lock:
+                        snapshot_start_date = start_date
                         current_start_date = start_date
                         previous_fingerprint = last_fingerprint
                         previous_rendered_date = last_rendered_date
+                        # Keep today in the second row as the days roll over,
+                        # unless we've paged ahead with Button B.
+                        if viewing_today and datetime.datetime.now().date() != previous_rendered_date:
+                            current_start_date = datetime.datetime.now()
 
                     new_fingerprint = getMonth(current_start_date)
+                    if new_fingerprint is None:
+                        continue  # fetch failed; try again next interval
+
                     today_changed = datetime.datetime.now().date() != previous_rendered_date
 
                     if new_fingerprint != previous_fingerprint or today_changed:
                         print("Calendar changed, refreshing display...")
                         with state_lock:
                             display()
+                            # Don't clobber a button press that happened during the fetch.
+                            if start_date == snapshot_start_date:
+                                start_date = current_start_date
                             last_fingerprint = new_fingerprint
                             last_rendered_date = datetime.datetime.now().date()
                     else:
