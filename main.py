@@ -24,8 +24,9 @@ def getMonth(start_date=None):
     print("Getting month...")
     cal_img = CalendarImage(start_date)
 
-    start_time = cal_img.prev_monday.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
-    end_time = (cal_img.prev_monday + datetime.timedelta(days=(cal_img.weeks * 7) - 1)).replace(hour=23, minute=59, second=59, microsecond=999999).isoformat() + "Z"
+    # astimezone() attaches the Pi's local UTC offset; these are local times, not UTC.
+    start_time = cal_img.prev_monday.replace(hour=0, minute=0, second=0, microsecond=0).astimezone().isoformat()
+    end_time = (cal_img.prev_monday + datetime.timedelta(days=(cal_img.weeks * 7) - 1)).replace(hour=23, minute=59, second=59, microsecond=999999).astimezone().isoformat()
 
     events = cal_img.get_events(start_time, end_time)
     if events is None:
@@ -33,9 +34,9 @@ def getMonth(start_date=None):
         print("Skipping render because events could not be fetched.")
         return None
     cal_img.populate_events_dict(events)
-    cal_img.print_color_mapping()  # Show which organizers got which colors
     cal_img.draw_month()
     cal_img.draw_month_events()
+    cal_img.print_color_mapping()  # Show which organizers got which colors (assigned while drawing events)
     cal_img.draw_color_key()  # Draw the color key at the bottom
     cal_img.draw_last_updated()  # Draw the last updated timestamp
     cal_img.save_image()
@@ -104,7 +105,12 @@ if __name__ == "__main__":
     def refresh_calendar(new_start_date, follow_today):
         global start_date, viewing_today, last_fingerprint, last_rendered_date
         with state_lock:
-            fingerprint = getMonth(new_start_date)
+            try:
+                fingerprint = getMonth(new_start_date)
+            except Exception as e:
+                # Used at startup and by the buttons; an error here mustn't stop the main loop starting.
+                print(f"Error rendering calendar: {e}")
+                return
             if fingerprint is None:
                 return  # fetch failed; leave the current screen and start_date as they are
             start_date = new_start_date
@@ -142,35 +148,32 @@ if __name__ == "__main__":
                     time.sleep(CALENDAR_CHECK_INTERVAL_SECONDS)
                     print("Checking Google Calendar for updates...")
 
+                    # Hold the lock for the whole check so a button press can't render
+                    # calendar_image.png at the same time and get overwritten.
                     with state_lock:
-                        snapshot_start_date = start_date
-                        current_start_date = start_date
-                        previous_fingerprint = last_fingerprint
-                        previous_rendered_date = last_rendered_date
+                        today = datetime.datetime.now().date()
+                        today_changed = today != last_rendered_date
                         # Keep today in the second row as the days roll over,
                         # unless we've paged ahead with Button B.
-                        if viewing_today and datetime.datetime.now().date() != previous_rendered_date:
-                            current_start_date = datetime.datetime.now()
+                        next_start_date = datetime.datetime.now() if viewing_today and today_changed else start_date
 
-                    new_fingerprint = getMonth(current_start_date)
-                    if new_fingerprint is None:
-                        continue  # fetch failed; try again next interval
+                        new_fingerprint = getMonth(next_start_date)
+                        if new_fingerprint is None:
+                            continue  # fetch failed; try again next interval
 
-                    today_changed = datetime.datetime.now().date() != previous_rendered_date
-
-                    if new_fingerprint != previous_fingerprint or today_changed:
-                        print("Calendar changed, refreshing display...")
-                        with state_lock:
+                        if new_fingerprint != last_fingerprint or today_changed:
+                            print("Calendar changed, refreshing display...")
                             display()
-                            # Don't clobber a button press that happened during the fetch.
-                            if start_date == snapshot_start_date:
-                                start_date = current_start_date
+                            start_date = next_start_date
                             last_fingerprint = new_fingerprint
-                            last_rendered_date = datetime.datetime.now().date()
-                    else:
-                        print("No changes detected.")
+                            last_rendered_date = today
+                        else:
+                            print("No changes detected.")
                 except KeyboardInterrupt:
                     break
+                except Exception as e:
+                    # Keep running: exiting here would freeze the screen until the Pi reboots.
+                    print(f"Error during calendar check, will retry next interval: {e}")
         else:
             print("GPIO not available. Running in single-shot mode.")
             print("Calendar image saved as 'calendar_image.png'")

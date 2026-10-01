@@ -10,9 +10,39 @@ import math
 import json
 import os
 import sys
+from io import BytesIO
+from urllib.request import Request, urlopen
 
 sys.stdout.reconfigure(encoding='utf-8')
 sys.stderr.reconfigure(encoding='utf-8')
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Remembers which colour each organizer was given, so it stays the same across pages and restarts.
+ORGANIZER_COLORS_FILE = os.path.join(SCRIPT_DIR, "organizer_colors.json")
+
+
+class CachedTwitterEmojiSource(TwitterEmojiSource):
+    """Twemoji source that times out instead of hanging, and reuses downloads across renders."""
+    REQUEST_TIMEOUT_SECONDS = 10
+    _downloaded = {}  # emoji -> PNG bytes, shared by every CalendarImage in this process
+
+    def request(self, url):
+        # pilmoji's own request has no timeout, so a stalled download would hang forever.
+        req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urlopen(req, timeout=self.REQUEST_TIMEOUT_SECONDS) as response:
+            return response.read()
+
+    def get_emoji(self, emoji):
+        if emoji not in self._downloaded:
+            try:
+                stream = super().get_emoji(emoji)
+            except Exception as e:
+                # Don't cache failures, so a network blip doesn't drop the emoji for good.
+                print(f"Could not download emoji {emoji!r}: {e}")
+                return None
+            self._downloaded[emoji] = stream.getvalue() if stream else None
+        data = self._downloaded[emoji]
+        return BytesIO(data) if data is not None else None
 
 class CalendarImage:
     def __init__(self, start_date=None):
@@ -75,7 +105,7 @@ class CalendarImage:
         # ===== ORGANIZER COLORS =====
         # Available colors for different organizers
         self.organizer_colors = ["blue", "green", "brown", "yellow", "gray", "olive"]
-        self.organizer_color_map = {}  # Maps organizer email to color
+        self.organizer_color_map = {}  # Organizers shown in this render -> color (drives the key)
 
         # Calculate prev_monday based on start_date or default to current time
         if self.start_date:
@@ -97,12 +127,10 @@ class CalendarImage:
         self.events_dict = {}
 
         # ===== EMOJI SUPPORT (Twemoji via pilmoji) =====
-        self.emoji_source = TwitterEmojiSource()
+        self.emoji_source = CachedTwitterEmojiSource()
         self._emoji_support_cache = {}
 
-        # Get the directory of the current script
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        font_path = os.path.join(script_dir, "AtkinsonHyperlegible-Regular.ttf")
+        font_path = os.path.join(SCRIPT_DIR, "AtkinsonHyperlegible-Regular.ttf")
         
         # Check if font file exists, fallback to default if not
         if os.path.exists(font_path):
@@ -117,9 +145,7 @@ class CalendarImage:
 
 
     def load_credentials(self):
-        # Get the directory of the current script
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        key_file_path = os.path.join(script_dir, "KEY.json")
+        key_file_path = os.path.join(SCRIPT_DIR, "KEY.json")
         
         if not os.path.exists(key_file_path):
             raise FileNotFoundError(f"KEY.json file not found at {key_file_path}")
@@ -205,6 +231,9 @@ class CalendarImage:
             event_end_datetime = event["end"]["dateTime"]
             start_date, start_time = event_start_datetime[:10], event_start_datetime
             end_date, end_time = event_end_datetime[:10], event_end_datetime
+            # An event ending at exactly midnight (e.g. 22:00-00:00) doesn't occupy the next day.
+            if event_end_datetime[11:19] == "00:00:00" and end_date > start_date:
+                end_date = (datetime.datetime.strptime(end_date, "%Y-%m-%d") - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         except KeyError:
             # This is an all-day event
             start_date = event["start"]["date"]
@@ -243,13 +272,32 @@ class CalendarImage:
         """Black text needs a stroke to match the visual weight of white text"""
         return (1, "black") if text_color == "black" else (0, None)
 
+    def load_saved_organizer_colors(self):
+        try:
+            with open(ORGANIZER_COLORS_FILE) as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
+
     def get_organizer_color(self, organizer_email):
-        """Assign a unique color to each organizer email address"""
+        """Give each organizer a color that stays the same across pages and restarts"""
         if organizer_email not in self.organizer_color_map:
-            # Assign the next available color
-            color_index = len(self.organizer_color_map) % len(self.organizer_colors)
-            self.organizer_color_map[organizer_email] = self.organizer_colors[color_index]
-            print(f"Assigned color '{self.organizer_colors[color_index]}' to organizer: {organizer_email}")
+            saved = self.load_saved_organizer_colors()
+            if organizer_email not in saved:
+                # Prefer a color nobody has yet; once they're all taken, cycle through them.
+                used = set(saved.values())
+                unused = [c for c in self.organizer_colors if c not in used]
+                saved[organizer_email] = unused[0] if unused else self.organizer_colors[len(saved) % len(self.organizer_colors)]
+                try:
+                    # Write to a temp file then swap it in, so a power cut mid-write can't corrupt it.
+                    tmp_path = ORGANIZER_COLORS_FILE + ".tmp"
+                    with open(tmp_path, "w") as f:
+                        json.dump(saved, f, indent=2)
+                    os.replace(tmp_path, ORGANIZER_COLORS_FILE)
+                except OSError as e:
+                    print(f"Could not save organizer colors: {e}")
+                print(f"Assigned color '{saved[organizer_email]}' to organizer: {organizer_email}")
+            self.organizer_color_map[organizer_email] = saved[organizer_email]
         return self.organizer_color_map[organizer_email]
 
     def print_color_mapping(self):
